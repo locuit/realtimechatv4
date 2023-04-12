@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/style.css">
+  <title>Document</title>
+</head>
+<body>
+   <div class="chat-container">
+      <header class="chat-header">
+        <h1>TesseChat</h1>
+        <a href="./me" data-myUserId="<%=user.id%>" id="userId"><%= user.fullName%></a>
+        <a id="leave-btn" class="btn">Leave Room</a>
+      </header>
+      <main class="chat-main">
+        <div class="chat-sidebar">
+          <h3><i class="fas fa-comments"></i> Room Name:</h3>
+            <ul id="chatRooms">
+            <% rooms.forEach(room => { %>
+              <li><a href="#" data-roomId="<%=room.id%>"><%= room.roomName %></a></li>
+            <% }); %>
+            </ul>
+          <h3><i class="fas fa-users"></i> Users</h3>
+          <ul id="users">
+            <% users.forEach(user => { %>
+              <li><a href="#" data-userId="<%=user.id%>"><%= user.fullName %></a></li>
+            <% }); %>
+          </ul>
+        </div>
+        <div class="chat-messages"></div>
+        <div class="chat-usersOnline">
+          <h3>Users Online In Room</h3>
+          <ul id="user-InRoom">
+          </ul>
+        </div>
+      </main>
+      <div class="chat-form-container">
+        <form id="chat-form">
+          <input
+            id="msg"
+            type="text"
+            placeholder="Enter Message"
+            autocomplete="off"
+          />
+          <button class="btn"><i class="fas fa-paper-plane"></i> Send</button>
+        </form>
+        <form id="uploadForm">
+          <input type="file" name="file" id="fileInput">
+          <input type="submit" value="Gửi">
+        </form>
+    </div>
+</body>
+<script src="/socket.io/socket.io.js"></script>
+<script src="./js/main.js"></script>
+<script>
+    var btnRoom = document.getElementById('chatRooms');
+    var btnMyUser = document.getElementById('userId').getAttribute('data-myUserId');
+    console.log(btnMyUser);
+    var btnUser = document.getElementById('users');
+
+    btnRoom.addEventListener('click', (event)=>{
+      if (event.target.tagName === 'A') {
+      // Lấy roomId của phòng chat được click
+      const roomId = event.target.getAttribute('data-roomId');
+      window.location.href = `./chat?room=${roomId}&user=${btnMyUser}`;
+    }
+    });
+    btnUser.addEventListener('click', function(){
+      if (event.target.tagName === 'A') {
+        const selectedUserId = event.target.getAttribute('data-userId');
+        window.location.href = `./chat?user1=${selectedUserId}&user2=${btnMyUser}`;
+    }
+    });
+</script>
+</html>
