@@ -12,12 +12,13 @@
    <div class="chat-container">
       <header class="chat-header">
         <h1>TesseChat</h1>
-        <a href="./me" data-myUserId="<%=user.id%>" id="userId"><%= user.fullName%></a>
-        <a id="leave-btn" class="btn">Leave Room</a>
+        <a href="./me" data-myUserId="<%=user.id%>" id="userId" class="me"><%= user.fullName%></a>
+        <a id="leave-btn" class="btn">Exit</a>
       </header>
       <main class="chat-main">
         <div class="chat-sidebar">
           <h3><i class="fas fa-comments"></i> Room Name:</h3>
+          <button onclick="showModal()" class="btn">Create New Room</button>
             <ul id="chatRooms">
             <% rooms.forEach(room => { %>
               <li><a href="#" data-roomId="<%=room.id%>"><%= room.roomName %></a></li>
@@ -45,11 +46,11 @@
             placeholder="Enter Message"
             autocomplete="off"
           />
+          <label for="imageInput" class="file-label">
+            <span class="file-label-text">Choose Image</span>
+          </label>
+          <input id="imageInput" type="file" accept="image/*">
           <button class="btn"><i class="fas fa-paper-plane"></i> Send</button>
-        </form>
-        <form id="uploadForm">
-          <input type="file" name="file" id="fileInput">
-          <input type="submit" value="Gửi">
         </form>
     </div>
 </body>
@@ -58,7 +59,6 @@
 <script>
     var btnRoom = document.getElementById('chatRooms');
     var btnMyUser = document.getElementById('userId').getAttribute('data-myUserId');
-    console.log(btnMyUser);
     var btnUser = document.getElementById('users');
 
     btnRoom.addEventListener('click', (event)=>{
@@ -74,5 +74,41 @@
         window.location.href = `./chat?user1=${selectedUserId}&user2=${btnMyUser}`;
     }
     });
+
+    function showModal() {
+      var modal = document.createElement('div'); // Tạo một đối tượng div mới để làm cửa sổ đè
+      modal.classList.add('modal'); // Thêm lớp CSS 'modal' vào đối tượng div
+      modal.innerHTML = `
+        <div class="modal-content">
+          <!-- Nội dung của cửa sổ đè -->
+          <h2>Tạo phòng chat</h2>
+          <form id="createRoomForm">
+            <label for="roomName">Tên phòng chat</label>
+            <input type="text" id="roomName" class="createRoomName" name="roomName" placeholder="Nhập tên phòng chat" required>
+            <label for="user">Chọn user</label>
+            <select name="user" id="user" multiple class="selectUserToRoom">
+              <% users.forEach(user => { %>
+                <option value="<%=user.id%>"><%= user.fullName %></option>
+              <% }); %> 
+            </select>
+            <button type="submit">Tạo</button>
+            <button type="button" onclick="hideModal()">Hủy</button>
+          </form>
+        </div>
+      `;
+      document.body.appendChild(modal); // Thêm cửa sổ đè vào trong thẻ body của trang web
+      document.getElementById('createRoomForm').addEventListener('submit', (event)=>{
+        event.preventDefault();
+        const roomName = document.querySelector('.createRoomName').value;
+        const selectUsers = document.querySelector('.selectUserToRoom')
+        const selectedUsers = Array.from(selectUsers.selectedOptions).map(option => option.value);
+        selectedUsers.push(btnMyUser);
+        createRoom(roomName, selectedUsers);
+      });
+    }
+    function hideModal() {
+      var modal = document.querySelector('.modal'); // Tìm đối tượng div với lớp CSS 'modal'
+      modal.parentNode.removeChild(modal); // Xóa cửa sổ đè khỏi thẻ body của trang web
+    }
 </script>
 </html>

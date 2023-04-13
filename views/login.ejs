@@ -38,7 +38,7 @@
                     <div class="form-control">
 						<label for="password">Password</label>
 						<input
-							type="text"
+							type="password"
 							name="password"
 							id="password"
 							placeholder="Enter password..."
@@ -46,8 +46,18 @@
 						/>
 					</div>
 					<button type="submit" class="btn">Login</button>
+					<button	onclick="register()" class="btn">Register</button>
+					<button onclick="loginWithGoolge()" class="btn">Login With Google</button>
 				</form>
 			</main>
 		</div>
 	</body>
+	<script>
+		function loginWithGoolge() {
+			window.location.href = "/auth/google";
+		}
+		function register() {
+			window.location.href = "/register";
+		}
+	</script>
 </html>

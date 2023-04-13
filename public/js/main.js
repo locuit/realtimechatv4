@@ -23,42 +23,38 @@ else{
 }
 }
 
-
+socket.on('createRoomSuccess',({roomName, roomId})=>{
+  alert('Tạo phòng thành công');
+  window.location.reload();
+})
 
 
 socket.on('privateRoom',({username,room})=>{
   socket.emit('joinRoom', { username, room });
 })
 
-
 socket.on('roomUsers', ({ room, users }) => {
   outputUsers(users);
 });
 
 
-// Lắng nghe sự kiện submit form
-document.getElementById('uploadForm').addEventListener('submit', (event) => {
-  event.preventDefault();
+function createRoom(roomName, selectedUsers){
+  socket.emit('createRoom', {roomName, selectedUsers});
+}
+let imageSelected = false; 
 
-  // Lấy file từ input
-  const file = document.getElementById('fileInput').files[0];
-  // Tạo FileReader để đọc dữ liệu của file
-  const reader = new FileReader();
-  // Xử lý sự kiện khi FileReader đọc dữ liệu thành công
-  reader.onload = function(event) {
-    // Đọc dữ liệu của file dưới dạng chuỗi (string) hoặc dưới dạng ArrayBuffer
-    const fileData = event.target.result;
-    // Gửi dữ liệu của file lên server thông qua kết nối Socket.IO
-    socket.emit('uploadFile', fileData);
-  };
+document.getElementById('imageInput').addEventListener('change', (event) => {
+  if (event.target.files.length > 0) {
 
-  // Xử lý sự kiện khi FileReader đọc dữ liệu thất bại
-  reader.onerror = function(event) {
-    console.error('Lỗi đọc dữ liệu file:', event.target.error);
-  };
-
-  // Đọc dữ liệu của file
-  reader.readAsArrayBuffer(file); // Hoặc reader.readAsText(file) nếu muốn đọc dữ liệu dưới dạng chuỗi (string)
+    const imageFile = event.target.files[0];
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const imageBuffer = new Uint8Array(e.target.result);
+      
+      socket.emit('uploadFile', imageBuffer);
+    };
+    reader.readAsArrayBuffer(imageFile);
+  }
 });
 
 chatForm.addEventListener('submit', (e) => {
@@ -87,22 +83,16 @@ socket.on('message', (message) => {
 });
 
 socket.on('uploadSuccess', (fileName) => {
-  // Tạo một thẻ li để hiển thị thông tin file đã upload
   const li = document.createElement('li');
 
-  // Tạo một thẻ a để hiển thị tên file và đường dẫn đến file
   const link = document.createElement('a');
-  link.href = `/uploads/${fileName}.jpg`; // Đường dẫn đến file
-  link.textContent = fileName; // Tên file
+  link.href = `/uploads/${fileName}.jpg`;
+  link.textContent = fileName;
   li.appendChild(link);
-
-  // Nếu file là hình ảnh, thì hiển thị nó làm hình ảnh
     const img = document.createElement('img');
-    img.src = `/uploads/${fileName}.jpg`; // Đường dẫn đến file
-    img.width = 200; // Kích thước ảnh
+    img.src = `/uploads/${fileName}.jpg`;
+    img.width = 200; 
     li.appendChild(img);
-
-  // Thêm thẻ li vào danh sách tin nhắn
   document.getElementById('messages').appendChild(li);
 });
 

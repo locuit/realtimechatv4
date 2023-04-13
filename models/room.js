@@ -5,11 +5,6 @@ const mongoose = require('mongoose');
 
 // Định nghĩa schema cho model Room
 const roomSchema = new mongoose.Schema({
-  roomId: {
-    type: String,
-    required: true,
-    unique: true
-  },
   roomName: {
     type: String,
     required: true

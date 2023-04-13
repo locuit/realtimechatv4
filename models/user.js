@@ -4,12 +4,9 @@ const bcrypt = require('bcrypt');
 const UserSchema = new mongoose.Schema({
     username: {
         type: String, 
-        required: true, 
-        unique: true
     },
     password: {
         type: String, 
-        required: true
     },
     fullName: {
         type: String, 
@@ -20,7 +17,15 @@ const UserSchema = new mongoose.Schema({
     },
     rooms: [{ 
         type: mongoose.Schema.Types.ObjectId, 
-        ref: 'Room' }]
+        ref: 'Room' }],
+    googleId: {
+        type: String,
+        default: ''
+    },
+    email: {
+        type: String,
+        default: ''
+    },
 },
     {timestamps: true}
 );
