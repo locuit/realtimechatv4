@@ -122,10 +122,3 @@ function outputUsers(users) {
     ${users.map(user => `<li id="userInRoom">${user.username}</li>`).join('')}
   `;
 }
-leaveRoom.addEventListener('click', () => {
-  const leaveRoom = confirm('Are you sure you want to leave the chatroom?');
-  if (leaveRoom) {
-    window.location = './login';
-  }
-});
-

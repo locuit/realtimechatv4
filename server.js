@@ -9,6 +9,7 @@ const flash = require('connect-flash');
 const User = require('./models/user'); // Import User model (nếu có)
 const Room = require('./models/room'); // Import Room model (nếu có)
 const PrivateRoom = require('./models/privateroom'); // Import PrivateRoom model (nếu có)
+const Message = require('./models/message'); // Import Message model (nếu có)
 var path = require('path')
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
@@ -19,7 +20,7 @@ const GoogleStrategy = require('passport-google-oauth20').Strategy;
 // Khởi tạo middleware multer để xử lý file upload 
 const fs = require('fs');
 // Sử dụng middleware socketio-file-upload để xử lý file upload thông qua Socket.IO
-
+const moment = require('moment');
 
 
 
@@ -48,7 +49,7 @@ app.use(bodyParser.urlencoded({ extended: false }));
 
 // Cấu hình session và passport
 app.use(session({
-  secret: 'secret-key', // Khóa bí mật để mã hóa session
+  secret: 'locuit', // Khóa bí mật để mã hóa session
   resave: false,
   saveUninitialized: false
 }));
@@ -174,17 +175,44 @@ failureRedirect: '/login',
 failureFlash: true,
 }));
 const adminName = 'Admin';
-app.get('/logout', (req, res) => {
-  // Xóa thông tin người dùng trong session và đăng xuất
-  req.session.destroy();
-  req.logout();
-  
-  // Chuyển hướng hoặc phản hồi thành công
-  res.redirect('/login');
+
+app.post('/logout', (req, res) => {
+  const userId = req.session.passport.user;
+  console.log(userId);
+  User.findById(userId)
+  .then(user => {
+    user.status = 'offline';
+    console.log(user);
+    user.save();
+  })
+  req.logout((err) => {
+    if (err) {
+      console.error('Lỗi khi đăng xuất:', err);
+      return res.redirect('/login');
+    }
+
+    // Xóa session của người dùng
+    req.session.destroy((err) => {
+      if (err) {
+        console.error('Lỗi khi xóa session:', err);
+        return res.redirect('/login');
+      }
+
+      // Chuyển hướng về trang đăng nhập sau khi xóa session thành công
+      res.redirect('/login');
+    });
+  });
 });
+
 
 app.get('/chat', ensureAuthenticated, (req, res) => {
   const userId = req.session.passport.user;
+  User.findById(userId)
+  .then(user => {
+    user.status = 'online';
+    console.log(user);
+    user.save();
+  })
   User.find({})
     .then(usersNotMe => {
       const filteredUsers = usersNotMe.filter(user => user._id != userId);
@@ -286,28 +314,52 @@ io.on("connection", (socket) => {
     socket.emit('createRoomSuccess', {roomName: roomName, roomId: room._id});
     
   });
-  socket.on('joinRoom', ({ username, room }) => {
-    User.findById(username).then( userFullName => {
-
-    const user = userJoin(socket.id, userFullName.fullName, room);
-        socket.join(user.room);
-
-        socket.broadcast.to(user.room).emit('message',formatMessage(adminName, `${user.username} has joined the chat`));
-        io.to(user.room).emit('roomUsers', {
-            room: user.room,
-            users: getRoomUsers(user.room)
-        });
-
-    })
-    
-
+  socket.on('joinRoom', async ({ username, room }) => {
+    try {
+      const userFullName = await User.findById(username);
+      const user = userJoin(socket.id, userFullName.fullName, room, username);
+      socket.join(user.room);
+      io.to(user.room).emit('roomUsers', {
+        room: user.room,
+        users: getRoomUsers(user.room)
+      });
+      const messages = await Message.find({ roomId: room });
+      messages.sort((a, b) => a.createdAt - b.createdAt);
+  
+      for (const message of messages) {
+        const user = await User.findById(message.senderId);
+        const formattedTime = moment(message.createdAt).format('HH:mm');
+        if (message.messageType === 'text') {
+          // render all message for me 
+          io.to(socket.id).emit('message', formatMessage(user.fullName, message.content, '', formattedTime));
+  
+        } else if (message.messageType === 'file') {
+          const dotIndex = message.content.lastIndexOf(".");
+          const fileName = message.content.substring(0, dotIndex);
+          const extension = message.content.substring(dotIndex + 1);
+  
+          io.to(socket.id).emit('message', formatMessage(user.fullName, fileName, extension, formattedTime));
+        }
+      }
+    } catch (error) {
+      console.error(error);
+    }
   });
     
   
   socket.on('chatMessage', (msg) => {
       const user = getCurrentUser(socket.id);
-
-      io.to(user.room).emit('message', formatMessage(user.username, msg));
+      //Lưu message vào database
+      console.log(user);
+      
+      const message = new Message({
+        roomId: user.room,
+        senderId: user.userId,
+        content: msg,
+        messageType: 'text'
+      });
+      message.save();
+      io.to(user.room).emit('message', formatMessage(user.username, msg,'',moment().format('h:mm a')));
   });
 
   socket.on('disconnect', () => {
@@ -333,6 +385,13 @@ io.on("connection", (socket) => {
         } else {
           console.log('File đã được lưu:', fileName);
           const user = getCurrentUser(socket.id);
+          const message = new Message({
+            roomId: user.room,
+            senderId: user.userId,
+            content: `${fileName}.${fileExtension}`,
+            messageType: 'file'
+          });
+          message.save();
           io.to(user.room).emit('message', formatMessage(user.username, `${fileName}`,`${fileExtension}`));
         }
       });
