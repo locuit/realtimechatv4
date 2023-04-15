@@ -7,12 +7,87 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="css/style.css">
   <title>Document</title>
+  <style>
+    #users a {
+      display: block;
+      text-decoration: none;
+      padding: 10px;
+      color: #000;
+      border: 1px solid #ccc;
+      margin-bottom: 5px;
+      border-radius: 5px;
+    }
+  
+    #users a:hover {
+      background-color: #e0e0e0;
+    }
+  
+    #users img {
+      border-radius: 50%;
+      display: inline-block;
+      object-fit: cover;
+    }
+  
+    #users span {
+      display: inline-block;
+    }
+    .modal-content {
+  width: 400px; /* Độ rộng của modal */
+  padding: 20px; /* Khoảng cách lề bên trong modal */
+  background-color: #fff; /* Màu nền của modal */
+  border-radius: 5px; /* Độ bo tròn của góc modal */
+}
+
+h2 {
+  font-size: 24px; /* Kích thước chữ tiêu đề */
+  margin-bottom: 20px; /* Khoảng cách dưới của tiêu đề */
+}
+
+label {
+  display: block; /* Hiển thị theo dạng block để có dòng mới */
+  margin-bottom: 5px; /* Khoảng cách dưới của nhãn */
+}
+
+input[type="text"],
+select {
+  width: 100%; /* Độ rộng của input và select */
+  padding: 8px; /* Khoảng cách lề bên trong input và select */
+  margin-bottom: 15px; /* Khoảng cách dưới của input và select */
+  border: 1px solid #ccc; /* Viền của input và select */
+  border-radius: 3px; /* Độ bo tròn của góc input và select */
+}
+
+select {
+  height: 100px; /* Độ cao của select */
+}
+
+button[type="submit"],
+button[type="button"] {
+  padding: 8px 16px; /* Khoảng cách lề bên trong nút */
+  margin-right: 10px; /* Khoảng cách phải của nút */
+  background-color: #007bff; /* Màu nền của nút */
+  color: #fff; /* Màu chữ của nút */
+  border: none; /* Bỏ viền của nút */
+  border-radius: 3px; /* Độ bo tròn của góc nút */
+  cursor: pointer; /* Đổi con trỏ chuột khi di chuột vào nút */
+}
+
+button[type="submit"]:hover,
+button[type="button"]:hover {
+  background-color: #0056b3; /* Màu nền của nút khi hover */
+}
+
+
+  </style>
 </head>
 <body>
    <div class="chat-container">
       <header class="chat-header">
         <h1>TesseChat</h1>
-        <a href="./me" data-myUserId="<%=user.id%>" id="userId" class="me"><%= user.fullName%></a>
+        <div id="avatar-container" style="display: flex;">
+          <img id="avatar" class="myAvatar" src="<%=user.avatar%>" alt="" >
+          <a href="./me" data-myUserId="<%=user.id%>" id="userId" class="me"><%= user.fullName%></a>
+        </div>
         <form action="./logout" method="post">
           <button class="btn">Logout</button>
         </form>
@@ -20,27 +95,28 @@
       <main class="chat-main">
         <div class="chat-sidebar">
           <h3><i class="fas fa-comments"></i> Room Name:</h3>
-          <button onclick="showModal()" class="btn">Create New Room</button>
-            <ul id="chatRooms">
-            <% rooms.forEach(room => { %>
-              <li><a href="#" data-roomId="<%=room.id%>"><%= room.roomName %></a></li>
-            <% }); %>
-            </ul>
+          <div class ="chat-sidebar-room">
+            <button onclick="showModal()" class="btn">Create New Room</button>
+              <ul id="chatRooms" class="rooms">
+              <% rooms.forEach(room => { %>
+                <li><a href="#" data-roomId="<%=room.id%>"><%= room.roomName %></a></li>
+              <% }); %>
+              </ul>
+          </div>
           <h3><i class="fas fa-users"></i> Users</h3>
-          <ul id="users">
-            <% users.forEach(user => { %>
-              <li>
-                <a href="#" data-userId="<%= user.id %>">
-                  <%= user.fullName %>
-                  <% if (user.status === 'online') { %>
-                    <span style="color: green;">(Online)</span>
-                  <% } else { %>
-                    <span style="color: red;">(Offline)</span>
-                  <% } %>
-                </a>
-              </li>
-            <% }); %>
-          </ul>
+          <div class="chat-sidebar-users">
+
+            <ul id="users">
+              <% users.forEach(user => { %>
+                <li>
+                  <a href="#" data-userId="<%= user.id %>" class="<%= user.status === 'online' ? 'online' : 'offline' %>">
+                    <img src="<%= user.avatar %>" alt="avatar" width="50px" height="50px" class="<%= user.status === 'online' ? 'online' : 'offline' %>">
+                    <span class="username"><%= user.fullName %></span>
+                  </a>
+                </li>
+              <% }); %>
+            </ul>
+          </div>
         </div>
         <div class="chat-messages"></div>
         <div class="chat-usersOnline">

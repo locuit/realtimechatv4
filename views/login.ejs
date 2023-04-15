@@ -47,7 +47,8 @@
 					</div>
 					<button type="submit" class="btn">Login</button>
 					<button	onclick="register()" class="btn">Register</button>
-					<button onclick="loginWithGoolge()" class="btn">Login With Google</button>
+					<button onclick="loginWithGoolge()" class="btn btn-google"><i style='font-size:24px' class='fab fa-google-plus-g'></i>  Login With Google</button>
+					<button onclick="loginWithFacebook()" class="btn btn-facebook"><i style='font-size:24px' class='	fab fa-facebook-f'></i>  Login With Facebook</button>
 				</form>
 			</main>
 		</div>
@@ -58,6 +59,9 @@
 		}
 		function register() {
 			window.location.href = "/register";
+		}
+		function loginWithFacebook() {
+			window.location.href = "/auth/facebook";
 		}
 	</script>
 </html>

@@ -119,6 +119,6 @@ function outputMessage(message) {
 
 function outputUsers(users) {
   userList.innerHTML = `
-    ${users.map(user => `<li id="userInRoom">${user.username}</li>`).join('')}
+    ${users.map(user => `<li id="userInRoom" class="${user.status === 'online' ? 'online' : 'offline'}">${user.fullName}</li>`).join('')}
   `;
 }

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Chỉnh sửa hồ sơ người dùng</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+    }
+
+    h1 {
+      text-align: center;
+    }
+
+    form {
+      max-width: 400px;
+      margin: 0 auto;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    input[type="file"] {
+      margin-bottom: 10px;
+    }
+
+    input[type="text"],
+    input[type="email"] {
+      width: 100%;
+      padding: 5px;
+      margin-bottom: 10px;
+    }
+
+    input[type="submit"] {
+      display: block;
+      margin: 0 auto;
+      padding: 10px;
+      background-color: #007bff;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+    }
+
+    img {
+      max-width: 100px;
+      margin-bottom: 10px;
+    }
+  </style>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="join-container">
+    
+    <header class="join-header">
+        <h1 style="color:yellow">Chỉnh sửa hồ sơ người dùng</h1>
+    </header>
+  <main class="join-main">
+      <form form action="/me/update" method="POST" enctype="multipart/form-data">
+          <div class="form-control">
+              <label for="avatar">Hình đại diện:</label>
+              <div id="avatar-container" style="position: relative;">
+                <img id="avatar" src="<%=user.avatar%>" alt="" width="100px">
+              </div>
+              <input type="file" name="avatar" id="avatar-input" accept="image/*" style="color:black">
+              <label for="fullname">Full Name:</label>
+                  <input 
+                  id="fullname" 
+                  name="fullname"
+                  type="text" 
+                  value="<%=user.fullName%>" 
+                  placeholder="<%=user.fullName%>"/>
+
+              <label for="email">Email:</label>
+              <input type="email" name="email" id="email" value="<%=user.email%>">
+          </div>
+          <button type="submit" value="Lưu" class="btn">Lưu</button>
+      </form>
+  </main>
+</div>
+</body>
+<script>
+  const avatarInput = document.getElementById('avatar-input');
+const avatar = document.getElementById('avatar');
+
+avatarInput.addEventListener('change', (event) => {
+  const file = event.target.files[0];
+  console.log(file);
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    avatar.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+});
+
+</script>
+</html>
