@@ -23,6 +23,11 @@ else{
   socket.emit('joinRoom', { username, room });
 }
 }
+
+function logout(userId)
+{
+  socket.emit('logout',userId)
+}
 socket.on('offlineUser',(userId)=>{
   console.log(userId,'offline');
   let x = document.querySelectorAll(`[id="${userId}"]`);

@@ -114,7 +114,7 @@ button[type="button"]:hover {
           <a href="./me" data-myUserId="<%=user.id%>" id="userId" class="me"><%= user.fullName%></a>
         </div>
         <form action="./logout" method="post">
-          <button class="btn" >Logout</button>
+          <button class="btn" onclick="logout(`<%=user.id%>`)" >Logout</button>
         </form>
       </header>
       <main class="chat-main">

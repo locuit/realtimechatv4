@@ -355,7 +355,6 @@ function updateStatus(userId){
   onlineUsers.push(onlineUser)
 }
 io.on("connection", (socket) => {
-  console.log("New client connected", socket.id);
   socket.on('login', ( userId ) => {
     updateStatus(userId);
     socket.broadcast.emit('onlineUser', userId);
@@ -550,19 +549,29 @@ io.on("connection", (socket) => {
         onlineUsers.splice(index, 1);
         User.updateOne({ _id: user.userId }, { $set: { status: 'offline' } }).then(() => {
         })
+        console.log(user.userId)
         socket.broadcast.emit('offlineUser', user.userId);
       }
     });
-  }, 30000);
+  }, 60000);
   socket.on('heartbeat', (userId) => {
+    console.log(onlineUsers)
     const user = onlineUsers.find(u => u.id === userId);
     if (user) {
       user.lastHeartbeat = Date.now();
   }
 
   });
+  socket.on('logout',(userId) =>{
+    onlineUsers.forEach((user, index) => {
+          onlineUsers.splice(index, 1);
+          User.updateOne({ _id: userId }, { $set: { status: 'offline' } }).then(() => {
+          })
+          socket.broadcast.emit('offlineUser', userId);
+        }
+      );
+  })
   socket.on('disconnect', () => {
-      console.log('User disconnected');
       const user = userLeave(socket.id);
       if(user)
       {
