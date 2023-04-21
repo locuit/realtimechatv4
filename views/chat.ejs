@@ -77,7 +77,32 @@ button[type="button"]:hover {
   background-color: #0056b3; /* Màu nền của nút khi hover */
 }
 
+.start-icon::before {
+      content: "▶️"; /* Biểu tượng start, ví dụ: một biểu tượng tam giác */
+    }
 
+    .stop-icon::before {
+      content: "⏹️"; /* Biểu tượng stop, ví dụ: một biểu tượng hình vuông */
+    }
+    .video-call-container {
+  display: none;
+}
+
+
+.local-video {
+  width: 300px;
+  height: 200px;
+  margin-bottom: 10px;
+}
+
+.remote-video {
+  width: 300px;
+  height: 200px;
+  margin-bottom: 10px;
+}
+.hidden {
+  display: none;
+}
   </style>
 </head>
 <body>
@@ -89,7 +114,7 @@ button[type="button"]:hover {
           <a href="./me" data-myUserId="<%=user.id%>" id="userId" class="me"><%= user.fullName%></a>
         </div>
         <form action="./logout" method="post">
-          <button class="btn">Logout</button>
+          <button class="btn" >Logout</button>
         </form>
       </header>
       <main class="chat-main">
@@ -105,20 +130,25 @@ button[type="button"]:hover {
           </div>
           <h3><i class="fas fa-users"></i> Users</h3>
           <div class="chat-sidebar-users">
-
             <ul id="users">
-              <% users.forEach(user => { %>
-                <li>
-                  <a href="#" data-userId="<%= user.id %>" class="<%= user.status === 'online' ? 'online' : 'offline' %>">
-                    <img src="<%= user.avatar %>" alt="avatar" width="50px" height="50px" class="<%= user.status === 'online' ? 'online' : 'offline' %>">
-                    <span class="username"><%= user.fullName %></span>
-                  </a>
-                </li>
-              <% }); %>
+            <% users.forEach(user => { %>
+              <li>
+                <a href="#" data-userId="<%=user.id%>" id="<%=user.id%>" class="<%=user.status%> === 'online' ? 'online' : 'offline'}">
+                  <img src="<%=user.avatar%>" alt="avatar" width="50px" height="50px"/>
+                  <span class="username"><%= user.fullName %></span>
+                </a>
+              </li>
+            <% }); %>
             </ul>
           </div>
         </div>
-        <div class="chat-messages"></div>
+        <div class="chat-messages">
+          <div class="video-container hidden" style="position: absolute;">
+            <video autoplay class="remote-video" id="remote-video"></video>
+            <video autoplay muted class="local-video" id="local-video"></video>
+            <button id="end-call-btn" class="btn">End Call</button>
+          </div>
+        </div>
         <div class="chat-usersOnline">
           <h3>Users Online In Room</h3>
           <ul id="user-InRoom">
@@ -137,6 +167,8 @@ button[type="button"]:hover {
             <span class="file-label-text">Choose Image</span>
           </label>
           <input id="imageInput" type="file" accept="image/*">
+          <button id="video-call-btn" class="btn" style="display:none" type="button">Call</button>
+          <button id="startStopRecordingButton" class="start-icon btn" type="button"></button>
           <button class="btn"><i class="fas fa-paper-plane"></i> Send</button>
         </form>
     </div>
@@ -144,13 +176,12 @@ button[type="button"]:hover {
 <script src="/socket.io/socket.io.js"></script>
 <script src="./js/main.js"></script>
 <script>
+  
     var btnRoom = document.getElementById('chatRooms');
     var btnMyUser = document.getElementById('userId').getAttribute('data-myUserId');
     var btnUser = document.getElementById('users');
-
     btnRoom.addEventListener('click', (event)=>{
       if (event.target.tagName === 'A') {
-      // Lấy roomId của phòng chat được click
       const roomId = event.target.getAttribute('data-roomId');
       window.location.href = `./chat?room=${roomId}&user=${btnMyUser}`;
     }
@@ -163,8 +194,8 @@ button[type="button"]:hover {
     });
 
     function showModal() {
-      var modal = document.createElement('div'); // Tạo một đối tượng div mới để làm cửa sổ đè
-      modal.classList.add('modal'); // Thêm lớp CSS 'modal' vào đối tượng div
+      var modal = document.createElement('div');
+      modal.classList.add('modal'); 
       modal.innerHTML = `
         <div class="modal-content">
           <!-- Nội dung của cửa sổ đè -->
@@ -197,5 +228,6 @@ button[type="button"]:hover {
       var modal = document.querySelector('.modal'); // Tìm đối tượng div với lớp CSS 'modal'
       modal.parentNode.removeChild(modal); // Xóa cửa sổ đè khỏi thẻ body của trang web
     }
+    login(`<%=user.id%>`);
 </script>
 </html>

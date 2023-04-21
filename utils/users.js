@@ -19,7 +19,9 @@ function userLeave(id) {
     return users.splice(index, 1)[0];
   }
 }
-
+function getAnotherUser(myPeerUserId) {
+  return users.find(user => user.userId === myPeerUserId);
+}
 function getRoomUsers(room) {
     return users.filter(user => user.room === room);
 }
@@ -27,5 +29,6 @@ module.exports = {
     userJoin,
     getCurrentUser,
     userLeave,
-    getRoomUsers
+    getRoomUsers,
+    getAnotherUser
 }

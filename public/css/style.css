@@ -101,6 +101,15 @@ a{
 	color: #030303;
 	border-radius: 5px;
 }
+#video-call {
+	background: #bdffaf;
+	color: rgb(0, 0, 0);
+	padding: 15px;
+	display: flex;
+	border-radius: 5px;
+	position: absolute;
+	right: 30%;
+}
 .chat-header {
 	background: #2f2f2f;
 	color: rgb(255 255 0);

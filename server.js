@@ -14,7 +14,7 @@ var path = require('path')
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const formatMessage = require('./utils/messages');
-const { userJoin, getCurrentUser,userLeave,getRoomUsers} = require('./utils/users');
+const { userJoin, getCurrentUser,userLeave,getRoomUsers, getAnotherUser} = require('./utils/users');
 dotenv.config();
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const FacebookStrategy = require('passport-facebook').Strategy;
@@ -49,6 +49,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.static(path.join(__dirname, 'views')));
 app.use(express.static(path.join(__dirname, 'models')));
 app.use(express.static(path.join(__dirname, 'uploads')));
+app.use(express.static(path.join(__dirname, 'uploads/voice')));
+app.use(express.static(path.join(__dirname, 'uploads/image')));
 
 
 
@@ -227,16 +229,6 @@ app.post('/logout', async (req, res) => {
     if (!req.session || !req.session.passport || !req.session.passport.user) {
       return res.redirect('/login');
     }
-
-    const userId = req.session.passport.user;
-    const user = await User.findById(userId);
-    if (user) {
-      user.status = 'offline';
-      console.log(user);
-      await user.save();
-    }
-
-
     req.logout((err) => {
       if (err) {
         console.error('Lỗi khi đăng xuất:', err);
@@ -253,14 +245,15 @@ app.post('/logout', async (req, res) => {
         res.redirect('/login');
       });
     })
-
   } catch (err) {
     console.error('Lỗi khi đăng xuất:', err);
     return res.redirect('/login');
   }
 });
 
-
+app.get('/videocall', ensureAuthenticated, (req, res) => {
+  res.render('videocall.ejs');
+});
 
 app.get('/chat', ensureAuthenticated, (req, res) => {
   try {
@@ -352,8 +345,22 @@ function getFileExtensionFromBuffer(buffer) {
     return 'unknown';
   }
 }
-
+const onlineUsers = [];
+function updateStatus(userId){
+  const index = onlineUsers.findIndex(u => u.userId === userId);
+  if (index !== -1) {
+    onlineUsers.splice(index, 1)[0];
+  }
+  const onlineUser ={userId,lastHeartbeat:new Date()};
+  onlineUsers.push(onlineUser)
+}
 io.on("connection", (socket) => {
+  console.log("New client connected", socket.id);
+  socket.on('login', ( userId ) => {
+    updateStatus(userId);
+    socket.broadcast.emit('onlineUser', userId);
+  });
+  // Handle chat event
   socket.on('checkRoom', ({myPeerUserId,myUserId}) => {
     checkPrivateRoom(myPeerUserId,myUserId).then(room => {
       if(room)
@@ -391,13 +398,13 @@ io.on("connection", (socket) => {
       const user = userJoin(socket.id, userFullName.fullName, room, username);
       socket.join(user.room);
       User.find({rooms : user.room}).then(userInRoom => {
-        console.log(userInRoom)
         io.to(user.room).emit('roomUsers', {
           room: user.room,
           users: userInRoom
         });
       })
-
+      updateStatus(username);
+      socket.broadcast.emit('onlineUser', username);
       const messages = await Message.find({ roomId: room });
       messages.sort((a, b) => a.createdAt - b.createdAt);
   
@@ -407,7 +414,15 @@ io.on("connection", (socket) => {
         if (message.messageType === 'text') {
           io.to(socket.id).emit('message', formatMessage(user.fullName, message.content, '', formattedTime));
   
-        } else if (message.messageType === 'file') {
+        } else if (message.messageType === 'image') {
+          const dotIndex = message.content.lastIndexOf(".");
+          const fileName = message.content.substring(0, dotIndex);
+          const extension = message.content.substring(dotIndex + 1);
+  
+          io.to(socket.id).emit('message', formatMessage(user.fullName, fileName, extension, formattedTime));
+        }
+        else if (message.messageType === 'audio')
+        {
           const dotIndex = message.content.lastIndexOf(".");
           const fileName = message.content.substring(0, dotIndex);
           const extension = message.content.substring(dotIndex + 1);
@@ -419,8 +434,7 @@ io.on("connection", (socket) => {
       console.error(error);
     }
   });
-    
-  
+
   socket.on('chatMessage', (msg) => {
       const user = getCurrentUser(socket.id);
       if(!user)
@@ -428,6 +442,8 @@ io.on("connection", (socket) => {
         socket.emit('message', formatMessage(adminName, 'You are not in a room, please join a room or user first','',moment().format('h:mm a')));
         return;
       }
+      updateStatus(user.userId);
+      socket.broadcast.emit('onlineUser', user.userId);
       const message = new Message({
         roomId: user.room,
         senderId: user.userId,
@@ -437,10 +453,117 @@ io.on("connection", (socket) => {
       message.save();
       io.to(user.room).emit('message', formatMessage(user.username, msg,'',moment().format('h:mm a')));
   });
+  // End Handle chat event
+  socket.on('getUserHangUp',(myPeerUserId) => {
+    const user = getAnotherUser(myPeerUserId);
+    if(user)
+    {
+      io.to(user.id).emit('handUp');
+    }
+  })
+  //Handle Send Voice
+  socket.on('voiceUpload', (data) => {
+    const audioBuffer = Buffer.from(data.audio, 'binary');
+    const fileName = `file_${Date.now()}`;
+    fs.writeFile(`uploads/voice/${fileName}.webm`, audioBuffer, (err) => {
+      if (err) {
+        console.error('Error saving audio file:', err);
+      } else {
+        console.log('Audio file saved successfully');
+        const user = getCurrentUser(socket.id);
+          const message = new Message({
+            roomId: user.room,
+            senderId: user.userId,
+            content: `${fileName}.webm`,
+            messageType: 'audio'
+          });
+          message.save();
+          io.to(user.room).emit('message', formatMessage(user.username, `${fileName}`,`webm`,moment().format('h:mm a')));
+        }
+      });
+    });
+    //End Handle Send Voice
+    //Handle Send Image
+    socket.on('imageUpload', (fileData) => {
+      
+      const buffer = Buffer.from(fileData);
+      const fileName = `file_${Date.now()}`;
+      const fileExtension = getFileExtensionFromBuffer(buffer);
+      fs.writeFile(`uploads/image/${fileName}.${fileExtension}`, buffer, (err) => {
+        if (err) {
+          console.error('Lỗi lưu file:', err);
+        } else {
+          console.log('File đã được lưu:', fileName);
+          const user = getCurrentUser(socket.id);
+          const message = new Message({
+            roomId: user.room,
+            senderId: user.userId,
+            content: `${fileName}.${fileExtension}`,
+            messageType: 'image'
+          });
+          message.save();
+          io.to(user.room).emit('message', formatMessage(user.username, `${fileName}`,`${fileExtension}`,moment().format('h:mm a')));
+        }
+      });
+    });
+    // End Handle Send Image
+    
+    //Handle Video Call
+    socket.on('getPeerId', (myPeerUserId) => {
+      const user = getAnotherUser(myPeerUserId);
+      console.log(user);
+      if(user)
+      {
+        io.to(socket.id).emit('getPeerIdSuccess', user.id);
+      }
+    });
+    socket.on("call-user", (data) => {
+      const user = getCurrentUser(socket.id);
+      socket.to(data.to).emit("call-made", {
+        offer: data.offer,
+        socket: socket.id,
+        user: user.username
+      });
+  });
+  socket.on("make-answer", data => {
+    socket.to(data.to).emit("answer-made", {
+      socket: socket.id,
+      answer: data.answer
+    });
+  });
+  
+  socket.on("reject-call", data => {
+    const user = getCurrentUser(socket.id);
+    socket.to(data.from).emit("call-rejected", {
+      socket: socket.id,
+      user: user.username
+    });
+  });
+  // End Handle Video Call
 
+  //Handle Disconnect
+  setInterval(() => {
+    const now = Date.now();
+    onlineUsers.forEach((user, index) => {
+      if (now - user.lastHeartbeat > 30000) {
+        // user has been inactive for more than 30 seconds, remove from onlineUsers
+        onlineUsers.splice(index, 1);
+        User.updateOne({ _id: user.userId }, { $set: { status: 'offline' } }).then(() => {
+        })
+        socket.broadcast.emit('offlineUser', user.userId);
+      }
+    });
+  }, 30000);
+  socket.on('heartbeat', (userId) => {
+    const user = onlineUsers.find(u => u.id === userId);
+    if (user) {
+      user.lastHeartbeat = Date.now();
+  }
+
+  });
   socket.on('disconnect', () => {
+      console.log('User disconnected');
       const user = userLeave(socket.id);
-      console.log(user)
       if(user)
       {
           io.to(user.room).emit('message', formatMessage(adminName, `${user.username} has left the chat`,'',moment().format('h:mm a')));
@@ -452,29 +575,7 @@ io.on("connection", (socket) => {
           })
       }
   });
-  socket.on('uploadFile', (fileData) => {
-
-      const buffer = Buffer.from(fileData);
-      const fileName = `file_${Date.now()}`;
-      const fileExtension = getFileExtensionFromBuffer(buffer);
-      fs.writeFile(`uploads/${fileName}.${fileExtension}`, buffer, (err) => {
-        if (err) {
-          console.error('Lỗi lưu file:', err);
-          socket.emit('uploadError', 'Lỗi lưu file');
-        } else {
-          console.log('File đã được lưu:', fileName);
-          const user = getCurrentUser(socket.id);
-          const message = new Message({
-            roomId: user.room,
-            senderId: user.userId,
-            content: `${fileName}.${fileExtension}`,
-            messageType: 'file'
-          });
-          message.save();
-          io.to(user.room).emit('message', formatMessage(user.username, `${fileName}`,`${fileExtension}`,moment().format('h:mm a')));
-        }
-      });
-  });
+  //End Handle Disconnect
 });
 
 app.post('/me/update', upload.single('avatar'), async (req, res) => {
