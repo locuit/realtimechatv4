@@ -549,7 +549,6 @@ io.on("connection", (socket) => {
         onlineUsers.splice(index, 1);
         User.updateOne({ _id: user.userId }, { $set: { status: 'offline' } }).then(() => {
         })
-        console.log(user.userId)
         socket.broadcast.emit('offlineUser', user.userId);
       }
     });
