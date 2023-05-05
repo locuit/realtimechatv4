@@ -14,7 +14,7 @@ var path = require('path')
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const formatMessage = require('./utils/messages');
-const { userJoin, getCurrentUser,userLeave,getRoomUsers, getAnotherUser} = require('./utils/users');
+const { userJoin, getCurrentUser,userLeave,getRoomUsers, getAnotherUser, addRoomUser} = require('./utils/users');
 dotenv.config();
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const FacebookStrategy = require('passport-facebook').Strategy;
@@ -41,7 +41,8 @@ const upload = multer({ storage: multer.memoryStorage() });
 const server = http.createServer(app);
 const socket = require('socket.io');
 const io = socket(server);
-
+const Redis = require('ioredis');
+const client = new Redis();
 
 
 app.engine('html', require('ejs').renderFile);
@@ -258,14 +259,15 @@ app.get('/videocall', ensureAuthenticated, (req, res) => {
 app.get('/chat', ensureAuthenticated, (req, res) => {
   try {
     const userId = req.session.passport.user;
-    User.findById(userId)
-      .then(user => {
-        user.status = 'online';
-        user.save();
-      })
     User.find({})
       .then(usersNotMe => {
         const filteredUsers = usersNotMe.filter(user => user._id != userId);
+        filteredUsers.forEach(user => {
+          client.hget('user_status', user._id.toString(), (err, status) => {
+            if (err) throw err;
+            user.status = status;
+          });
+        });
         User.findById(userId)
           .then(userIsMe => {
             const savedRooms = userIsMe.rooms;
@@ -345,19 +347,18 @@ function getFileExtensionFromBuffer(buffer) {
     return 'unknown';
   }
 }
-const onlineUsers = [];
-function updateStatus(userId){
-  const index = onlineUsers.findIndex(u => u.userId === userId);
-  if (index !== -1) {
-    onlineUsers.splice(index, 1)[0];
-  }
-  const onlineUser ={userId,lastHeartbeat:new Date()};
-  onlineUsers.push(onlineUser)
-}
+
 io.on("connection", (socket) => {
   socket.on('login', ( userId ) => {
-    updateStatus(userId);
-    socket.broadcast.emit('onlineUser', userId);
+    client.hset('user_status', userId, 'online');
+    const user = userJoin(socket.id, '', '', userId);
+    // lay danh sach user dang online
+    client.hgetall('user_status', (err, result) => {
+      if (err) throw err;
+      const onlineUsers = Object.keys(result).filter((userId) => result[userId] === 'online');
+      io.to(socket.id).emit('onlineUsers', onlineUsers);
+    });
+    io.emit('onlineUser', userId);
   });
   // Handle chat event
   socket.on('checkRoom', ({myPeerUserId,myUserId}) => {
@@ -397,41 +398,49 @@ io.on("connection", (socket) => {
       const user = userJoin(socket.id, userFullName.fullName, room, username);
       socket.join(user.room);
       User.find({rooms : user.room}).then(userInRoom => {
-        io.to(user.room).emit('roomUsers', {
+        // lay danh sach user dang online
+        io.to(socket.id).emit('roomUsers', {
           room: user.room,
           users: userInRoom
         });
+        client.hgetall('user_status', (err, result) => {
+          if (err) throw err;
+          const onlineUsers = Object.keys(result).filter((userId) => result[userId] === 'online');
+          io.to(socket.id).emit('onlineUsers', onlineUsers);
+        });
       })
-      updateStatus(username);
-      socket.broadcast.emit('onlineUser', username);
+      
+      io.emit('onlineUser', username);
       const messages = await Message.find({ roomId: room });
       messages.sort((a, b) => a.createdAt - b.createdAt);
-  
+      const messagesData = [];
       for (const message of messages) {
         const user = await User.findById(message.senderId);
         const formattedTime = moment(message.createdAt).format('HH:mm');
+        let messageContent ='';
+        let extension ='';
         if (message.messageType === 'text') {
-          io.to(socket.id).emit('message', formatMessage(user.fullName, message.content, '', formattedTime));
-  
-        } else if (message.messageType === 'image') {
+          messageContent = message.content;
+        }
+        else{
           const dotIndex = message.content.lastIndexOf(".");
           const fileName = message.content.substring(0, dotIndex);
-          const extension = message.content.substring(dotIndex + 1);
-  
-          io.to(socket.id).emit('message', formatMessage(user.fullName, fileName, extension, formattedTime));
+          extension = message.content.substring(dotIndex + 1);
+          messageContent = fileName;
         }
-        else if (message.messageType === 'audio')
-        {
-          const dotIndex = message.content.lastIndexOf(".");
-          const fileName = message.content.substring(0, dotIndex);
-          const extension = message.content.substring(dotIndex + 1);
-  
-          io.to(socket.id).emit('message', formatMessage(user.fullName, fileName, extension, formattedTime));
+        const messageData = {
+          username: user.fullName,
+          text: messageContent,
+          fileType: extension,
+          time: formattedTime
         }
+        messagesData.push(messageData);
       }
+      io.to(socket.id).emit('output-messages', messagesData);
     } catch (error) {
       console.error(error);
     }
+   
   });
 
   socket.on('chatMessage', (msg) => {
@@ -441,8 +450,6 @@ io.on("connection", (socket) => {
         socket.emit('message', formatMessage(adminName, 'You are not in a room, please join a room or user first','',moment().format('h:mm a')));
         return;
       }
-      updateStatus(user.userId);
-      socket.broadcast.emit('onlineUser', user.userId);
       const message = new Message({
         roomId: user.room,
         senderId: user.userId,
@@ -477,6 +484,7 @@ io.on("connection", (socket) => {
             messageType: 'audio'
           });
           message.save();
+          io.emit('onlineUser',user.userId)
           io.to(user.room).emit('message', formatMessage(user.username, `${fileName}`,`webm`,moment().format('h:mm a')));
         }
       });
@@ -501,6 +509,7 @@ io.on("connection", (socket) => {
             messageType: 'image'
           });
           message.save();
+          io.emit('onlineUser',user.userId);
           io.to(user.room).emit('message', formatMessage(user.username, `${fileName}`,`${fileExtension}`,moment().format('h:mm a')));
         }
       });
@@ -510,7 +519,6 @@ io.on("connection", (socket) => {
     //Handle Video Call
     socket.on('getPeerId', (myPeerUserId) => {
       const user = getAnotherUser(myPeerUserId);
-      console.log(user);
       if(user)
       {
         io.to(socket.id).emit('getPeerIdSuccess', user.id);
@@ -541,46 +549,27 @@ io.on("connection", (socket) => {
   // End Handle Video Call
 
   //Handle Disconnect
-  setInterval(() => {
-    const now = Date.now();
-    onlineUsers.forEach((user, index) => {
-      if (now - user.lastHeartbeat > 30000) {
-        // user has been inactive for more than 30 seconds, remove from onlineUsers
-        onlineUsers.splice(index, 1);
-        User.updateOne({ _id: user.userId }, { $set: { status: 'offline' } }).then(() => {
-        })
-        socket.broadcast.emit('offlineUser', user.userId);
-      }
-    });
-  }, 60000);
-  socket.on('heartbeat', (userId) => {
-    console.log(onlineUsers)
-    const user = onlineUsers.find(u => u.id === userId);
-    if (user) {
-      user.lastHeartbeat = Date.now();
-  }
-
-  });
   socket.on('logout',(userId) =>{
-    onlineUsers.forEach((user, index) => {
-          onlineUsers.splice(index, 1);
-          User.updateOne({ _id: userId }, { $set: { status: 'offline' } }).then(() => {
-          })
-          socket.broadcast.emit('offlineUser', userId);
-        }
-      );
+    io.emit('offlineUser',userId);
+    client.hdel('user_status', userId);
   })
   socket.on('disconnect', () => {
+    const getuser = getCurrentUser(socket.id);
+    if(getuser)
+    {
+      io.emit('offlineUser',getuser.userId);
+      client.hdel('user_status', getuser.userId);
+    }
+    client.hgetall('user_status', (err, result) => {
+      if (err) throw err;
+    
+      const onlineUsers = Object.keys(result).filter((userId) => result[userId] === 'online');
+      
+    });
       const user = userLeave(socket.id);
-      if(user)
+      if(user && user.room)
       {
           io.to(user.room).emit('message', formatMessage(adminName, `${user.username} has left the chat`,'',moment().format('h:mm a')));
-          User.find({rooms : user.room}).then(userInRoom => {
-            io.to(user.room).emit('roomUsers', {
-              room: user.room,
-              users: userInRoom
-            });
-          })
       }
   });
   //End Handle Disconnect

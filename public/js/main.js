@@ -1,4 +1,5 @@
 
+
 const leaveRoom = document.getElementById('leave-btn');
 const chatForm = document.getElementById('chat-form');
 const chatMessages = document.querySelector('.chat-messages');
@@ -29,19 +30,24 @@ function logout(userId)
   socket.emit('logout',userId)
 }
 socket.on('offlineUser',(userId)=>{
-  console.log(userId,'offline');
   let x = document.querySelectorAll(`[id="${userId}"]`);
   for(var i=0;i<x.length;i++){
-    console.log(x[i]);
     x[i].classList.remove('online');
     x[i].classList.add('offline');
   }
 })
+socket.on('onlineUsers',(onlineUsers)=>{
+  onlineUsers.forEach(userId => {
+    let x = document.querySelectorAll(`[id="${userId}"]`);
+    for(var i=0;i<x.length;i++){
+      x[i].classList.remove('offline');
+      x[i].classList.add('online');
+    }
+  });
+})
 socket.on('onlineUser',(userId)=>{
-  console.log(userId,'online');
   let x = document.querySelectorAll(`[id="${userId}"]`);
   for(var i=0;i<x.length;i++){
-    console.log(x[i]);
     x[i].classList.remove('offline');
     x[i].classList.add('online');
   }
@@ -53,9 +59,6 @@ socket.on('createRoomSuccess',({roomName, roomId})=>{
 
 function login(userId)
 {
-  setInterval(() => {
-    socket.emit('heartbeat',userId);
-  }, 5000);
   socket.emit('login', userId);
   
 }
@@ -65,7 +68,7 @@ socket.on('privateRoom',({username,room})=>{
   socket.emit('joinRoom', { username, room });
 })
 
-socket.on('roomUsers', ({ room, users }) => {
+socket.on('roomUsers', ({ room, users}) => {
   outputUsers(users);
 });
 
@@ -160,3 +163,11 @@ function outputUsers(users) {
     ${users.map(user => `<li id="${user._id}" class="${user.status === 'online' ? 'online' : 'offline'}">${user.fullName}</li>`).join('')}
   `;
 }
+
+socket.on('output-messages', (data) => {
+  if (data.length) {
+    data.forEach((message) => {
+      outputMessage(message);
+    });
+  }
+});

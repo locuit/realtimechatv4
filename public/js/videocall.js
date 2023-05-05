@@ -7,7 +7,7 @@ const videoContainer = document.querySelector('.video-container');
 const endCallBtn = document.getElementById('end-call-btn');
 document.getElementById("end-call-btn").addEventListener("click", hangUp);
 document.getElementById('video-call-btn').addEventListener('click', async ()  => {
-  videoContainer.classList.remove('hidden');
+     videoContainer.classList.remove('hidden');
   const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
   if (stream) {
     console.log('stream')
@@ -17,6 +17,7 @@ document.getElementById('video-call-btn').addEventListener('click', async ()  =>
   }
   console.log(myPeerUserId)
   socket.emit('getPeerId',myPeerUserId);
+
 });
   function hangUp() {
     peerConnection.close();

@@ -2,7 +2,7 @@ const startStopRecordingButton = document.getElementById('startStopRecordingButt
 let mediaRecorder;
 let recordedChunks = [];
 let isRecording = false;
-
+const audioPlayer = document.querySelector('audio');
 
 startStopRecordingButton.addEventListener('click', (e) => {
 

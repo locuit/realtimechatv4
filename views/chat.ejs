@@ -133,7 +133,7 @@ button[type="button"]:hover {
             <ul id="users">
             <% users.forEach(user => { %>
               <li>
-                <a href="#" data-userId="<%=user.id%>" id="<%=user.id%>" class="<%=user.status%> === 'online' ? 'online' : 'offline'}">
+                <a href="#" data-userId="<%=user.id%>" id="<%=user.id%>" class="offline">
                   <img src="<%=user.avatar%>" alt="avatar" width="50px" height="50px"/>
                   <span class="username"><%= user.fullName %></span>
                 </a>
@@ -168,7 +168,7 @@ button[type="button"]:hover {
           </label>
           <input id="imageInput" type="file" accept="image/*">
           <button id="video-call-btn" class="btn" style="display:none" type="button">Call</button>
-          <button id="startStopRecordingButton" class="start-icon btn" type="button"></button>
+          <button id="startStopRecordingButton" class="start-icon btn audio" type="button"></button>
           <button class="btn"><i class="fas fa-paper-plane"></i> Send</button>
         </form>
     </div>
