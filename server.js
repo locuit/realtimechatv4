@@ -42,7 +42,14 @@ const server = http.createServer(app);
 const socket = require('socket.io');
 const io = socket(server);
 const Redis = require('ioredis');
-const client = new Redis();
+const client = new Redis({
+    host: 'redis-11490.c295.ap-southeast-1-1.ec2.cloud.redislabs.com',
+    port: 11490,
+    username: 'default',
+    password: 'ZzbFUmwQEXe6rQIbxZoempgvTqOrUjm9',
+});
+
+
 
 
 app.engine('html', require('ejs').renderFile);
