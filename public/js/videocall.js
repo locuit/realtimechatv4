@@ -6,6 +6,15 @@ const peerConnection = new RTCPeerConnection();
 const videoContainer = document.querySelector('.video-container');
 const endCallBtn = document.getElementById('end-call-btn');
 document.getElementById("end-call-btn").addEventListener("click", hangUp);
+const muteBtn = document.getElementById('mute-btn');
+let isMicMuted = false;
+muteBtn.addEventListener('click', () => {
+  const localStream = document.getElementById("local-video").srcObject;
+  const audioTrack = localStream.getAudioTracks()[0];
+  isMicMuted = !isMicMuted;
+  audioTrack.enabled = !isMicMuted;
+  muteBtn.textContent = isMicMuted ? "Unmute" : "Mute";
+});
 document.getElementById('video-call-btn').addEventListener('click', async ()  => {
      videoContainer.classList.remove('hidden');
   const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });

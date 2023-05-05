@@ -359,7 +359,6 @@ io.on("connection", (socket) => {
   socket.on('login', ( userId ) => {
     client.hset('user_status', userId, 'online');
     const user = userJoin(socket.id, '', '', userId);
-    // lay danh sach user dang online
     client.hgetall('user_status', (err, result) => {
       if (err) throw err;
       const onlineUsers = Object.keys(result).filter((userId) => result[userId] === 'online');
@@ -405,7 +404,6 @@ io.on("connection", (socket) => {
       const user = userJoin(socket.id, userFullName.fullName, room, username);
       socket.join(user.room);
       User.find({rooms : user.room}).then(userInRoom => {
-        // lay danh sach user dang online
         io.to(socket.id).emit('roomUsers', {
           room: user.room,
           users: userInRoom
@@ -452,7 +450,7 @@ io.on("connection", (socket) => {
 
   socket.on('chatMessage', (msg) => {
       const user = getCurrentUser(socket.id);
-      if(!user)
+      if(!user.room)
       {
         socket.emit('message', formatMessage(adminName, 'You are not in a room, please join a room or user first','',moment().format('h:mm a')));
         return;
@@ -476,6 +474,12 @@ io.on("connection", (socket) => {
   })
   //Handle Send Voice
   socket.on('voiceUpload', (data) => {
+    const user = getCurrentUser(socket.id);
+        if(!user.room)
+      {
+        socket.emit('message', formatMessage(adminName, 'You are not in a room, please join a room or user first','',moment().format('h:mm a')));
+        return;
+      }
     const audioBuffer = Buffer.from(data.audio, 'binary');
     const fileName = `file_${Date.now()}`;
     fs.writeFile(`uploads/voice/${fileName}.webm`, audioBuffer, (err) => {
@@ -483,7 +487,7 @@ io.on("connection", (socket) => {
         console.error('Error saving audio file:', err);
       } else {
         console.log('Audio file saved successfully');
-        const user = getCurrentUser(socket.id);
+        
           const message = new Message({
             roomId: user.room,
             senderId: user.userId,
@@ -499,7 +503,12 @@ io.on("connection", (socket) => {
     //End Handle Send Voice
     //Handle Send Image
     socket.on('imageUpload', (fileData) => {
-      
+      const user = getCurrentUser(socket.id);
+          if(!user.room)
+          {
+            socket.emit('message', formatMessage(adminName, 'You are not in a room, please join a room or user first','',moment().format('h:mm a')));
+            return;
+          }
       const buffer = Buffer.from(fileData);
       const fileName = `file_${Date.now()}`;
       const fileExtension = getFileExtensionFromBuffer(buffer);
@@ -508,7 +517,7 @@ io.on("connection", (socket) => {
           console.error('Lỗi lưu file:', err);
         } else {
           console.log('File đã được lưu:', fileName);
-          const user = getCurrentUser(socket.id);
+          
           const message = new Message({
             roomId: user.room,
             senderId: user.userId,
