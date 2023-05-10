@@ -108,7 +108,7 @@ button[type="button"]:hover {
 <body>
    <div class="chat-container">
       <header class="chat-header">
-        <h1>TesseChat</h1>
+        <h1>UITChat</h1>
         <div id="avatar-container" style="display: flex;">
           <img id="avatar" class="myAvatar" src="<%=user.avatar%>" alt="" >
           <a href="./me" data-myUserId="<%=user.id%>" id="userId" class="me"><%= user.fullName%></a>
@@ -146,7 +146,7 @@ button[type="button"]:hover {
           <div class="video-container hidden" style="position: absolute;">
             <video autoplay class="remote-video" id="remote-video"></video>
             <video autoplay muted class="local-video" id="local-video"></video>
-            <button id="mute-btn">Bật/Tắt âm thanh</button>
+            <button id="mute-btn">Mute/Unmute</button>
             <button id="end-call-btn" class="btn">End Call</button>
           </div>
         </div>

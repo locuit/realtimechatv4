@@ -1,4 +1,3 @@
-
 let isAlreadyCalling = false;
 let getCalled = false;
 const { RTCPeerConnection, RTCSessionDescription } = window;
@@ -24,9 +23,7 @@ document.getElementById('video-call-btn').addEventListener('click', async ()  =>
     localVideo.srcObject = stream;
     stream.getTracks().forEach(track => peerConnection.addTrack(track, stream));
   }
-  console.log(myPeerUserId)
   socket.emit('getPeerId',myPeerUserId);
-
 });
   function hangUp() {
     peerConnection.close();
@@ -55,10 +52,13 @@ socket.on('getPeerIdSuccess', (peerId) => {
   console.log('peerId', peerId);
   callUser(peerId);
 });
+socket.on('getPeerIdFail',()=> {
+  alert('Người dùng không online');
+  window.location.reload();
+});
 async function callUser(socketId) {
   const offer = await peerConnection.createOffer();
   await peerConnection.setLocalDescription(new RTCSessionDescription(offer));
-  
   socket.emit("call-user", {
     offer,
     to: socketId
@@ -74,7 +74,6 @@ socket.on("call-made", async data => {
       socket.emit("reject-call", {
         from: data.socket
       });
-
       return;
     }
     videoContainer.classList.remove('hidden');
@@ -90,7 +89,7 @@ socket.on("call-made", async data => {
     );
     const answer = await peerConnection.createAnswer();
     await peerConnection.setLocalDescription(new RTCSessionDescription(answer));
-
+    console.log(isAlreadyCalling)
   socket.emit("make-answer", {
     answer,
     to: data.socket
