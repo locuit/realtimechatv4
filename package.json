@@ -36,7 +36,6 @@
     "passport-google-oauth20": "^2.0.0",
     "passport-local": "^1.0.0",
     "qs": "^6.11.1",
-    "sharp": "^0.32.0",
     "socket.io": "^4.6.1"
   }
 }
