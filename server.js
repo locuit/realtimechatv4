@@ -527,13 +527,16 @@ io.on("connection", (socket) => {
             socket.emit('message', formatMessage(adminName, 'You are not in a room, please join a room or user first','',moment().format('h:mm a')));
             return;
           }  
-      const buffer = Buffer.from(fileData);    
+      const buffer = Buffer.from(fileData);
+      console.log('buffer');
+      console.log(buffer);
       const fileName = `file_${Date.now()}`;
       const fileExtension = getFileExtensionFromBuffer(buffer);
       fs.writeFile(`uploads/image/${fileName}.${fileExtension}`, buffer, (err) => {
         if (err) {
           console.error('Lỗi lưu file:', err);
-        } else {          
+        } else {   
+                 
           const message = new Message({
             roomId: user.room,
             senderId: user.userId,

@@ -79,15 +79,57 @@ let imageSelected = false;
 
 document.getElementById('imageInput').addEventListener('change', (event) => {
   if (event.target.files.length > 0) {
-
     const imageFile = event.target.files[0];
     const reader = new FileReader();
+    
     reader.onload = (e) => {
-      const imageBuffer = new Uint8Array(e.target.result);
-      console.log(imageBuffer)
-      socket.emit('imageUpload', imageBuffer);
+      const image = new Image();
+      image.onload = () => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Tính toán kích thước mới cho ảnh
+        const maxWidth = 1200;
+        const maxHeight = 800;
+        let width = image.width;
+        let height = image.height;
+
+        if (width > maxWidth) {
+          height *= maxWidth / width;
+          width = maxWidth;
+        }
+
+        if (height > maxHeight) {
+          width *= maxHeight / height;
+          height = maxHeight;
+        }
+        
+        // Đặt kích thước mới cho canvas
+        canvas.width = width;
+        canvas.height = height;
+
+        // Vẽ ảnh lên canvas với kích thước mới
+        ctx.drawImage(image, 0, 0, width, height);
+
+        // Lấy dữ liệu hình ảnh từ canvas dưới dạng Base64
+        const compressedImageData = canvas.toDataURL('image/jpeg', 1); // Giảm chất lượng ảnh xuống 70%
+
+        // Chuyển đổi dữ liệu Base64 thành ArrayBuffer
+        const byteString = atob(compressedImageData.split(',')[1]);
+        const buffer = new ArrayBuffer(byteString.length);
+        const view = new Uint8Array(buffer);
+
+        for (let i = 0; i < byteString.length; i++) {
+          view[i] = byteString.charCodeAt(i);
+        }
+
+        socket.emit('imageUpload', buffer);
+      };
+
+      image.src = e.target.result;
     };
-    reader.readAsArrayBuffer(imageFile);
+
+    reader.readAsDataURL(imageFile);
   }
 });
 
