@@ -164,7 +164,7 @@ passport.use(new GoogleStrategy({
 passport.use(new FacebookStrategy({
   clientID: process.env.FACEBOOK_APP_ID,
   clientSecret: process.env.FACEBOOK_APP_SECRET,
-  callbackURL: 'http://localhost:3000/facebook/callback',
+  callbackURL: 'https://chatchat.onrender.com/facebook/callback',
   profileFields: ['id', 'displayName', 'photos', 'email']
 }, (accessToken,refreshToken,profile,done) => {
     // Check if facebook profile exist.
@@ -477,7 +477,7 @@ io.on("connection", (socket) => {
 
   socket.on('chatMessage', (msg) => {
       const user = getCurrentUser(socket.id);
-      if(!user.room)
+      if(!user || !user.room)
       {
         socket.emit('message', formatMessage(adminName, 'You are not in a room, please join a room or user first','',moment().format('h:mm a')));
         return;
@@ -495,7 +495,7 @@ io.on("connection", (socket) => {
   //Handle Send Voice
   socket.on('voiceUpload', (data) => {
     const user = getCurrentUser(socket.id);
-        if(!user.room)
+        if(!user || !user.room)
       {
         socket.emit('message', formatMessage(adminName, 'You are not in a room, please join a room or user first','',moment().format('h:mm a')));
         return;
@@ -522,7 +522,7 @@ io.on("connection", (socket) => {
     //Handle Send Image
     socket.on('imageUpload', (fileData) => {
       const user = getCurrentUser(socket.id);
-          if(!user.room)
+          if(!user || !user.room)
           {
             socket.emit('message', formatMessage(adminName, 'You are not in a room, please join a room or user first','',moment().format('h:mm a')));
             return;
