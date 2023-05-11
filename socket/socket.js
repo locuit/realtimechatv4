@@ -252,7 +252,6 @@ const moment = require('moment');
           idCaller: user.userId,
           idReceiver: peerUser.userId,
       });
-      console.log(callStatus);
       }
       socket.to(data.to).emit("answer-made", {
         socket: socket.id,
@@ -274,7 +273,6 @@ const moment = require('moment');
       if (peerUserIndex !== -1) {
         callStatus.splice(peerUserIndex, 1);
       }
-      console.log(callStatus);
       socket.to(data.from).emit("call-rejected", {
         socket: socket.id,
         user: user.username
