@@ -1,12 +1,15 @@
 let isAlreadyCalling = false;
 let getCalled = false;
+let isMicMuted = false;
+
 const { RTCPeerConnection, RTCSessionDescription } = window;
 const peerConnection = new RTCPeerConnection();
 const videoContainer = document.querySelector('.video-container');
 const endCallBtn = document.getElementById('end-call-btn');
-document.getElementById("end-call-btn").addEventListener("click", hangUp);
 const muteBtn = document.getElementById('mute-btn');
-let isMicMuted = false;
+let peerUserId;
+document.getElementById("end-call-btn").addEventListener("click", hangUp);
+
 muteBtn.addEventListener('click', () => {
   const localStream = document.getElementById("local-video").srcObject;
   const audioTrack = localStream.getAudioTracks()[0];
@@ -14,8 +17,9 @@ muteBtn.addEventListener('click', () => {
   audioTrack.enabled = !isMicMuted;
   muteBtn.textContent = isMicMuted ? "Unmute" : "Mute";
 });
+
 document.getElementById('video-call-btn').addEventListener('click', async ()  => {
-     videoContainer.classList.remove('hidden');
+  videoContainer.classList.remove('hidden');
   const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
   if (stream) {
     const localVideo = document.getElementById("local-video");
@@ -24,7 +28,7 @@ document.getElementById('video-call-btn').addEventListener('click', async ()  =>
   }
   socket.emit('getPeerId',myPeerUserId);
 });
-  function hangUp() {
+function hangUp() {
     peerConnection.close();
     peerConnection.onicecandidate = null;
     peerConnection.onaddstream = null;
@@ -32,28 +36,39 @@ document.getElementById('video-call-btn').addEventListener('click', async ()  =>
     const localVideo = document.getElementById("local-video");
     localVideo.srcObject.getTracks().forEach(track => track.stop());
     localVideo.srcObject = null;
-
+    const urlParams = new URLSearchParams(window.location.search);
+    const myPeerUserId = urlParams.get('user1');
     const remoteVideo = document.getElementById("remote-video");
     remoteVideo.srcObject.getTracks().forEach(track => track.stop());
     remoteVideo.srcObject = null;
 
     videoContainer.classList.add('hidden');
-    socket.emit('getUserHangUp',myPeerUserId);
+    if(myPeerUserId){
+      socket.emit('getUserHangUp',myPeerUserId);
+    }
+    else {
+
+      socket.emit('getUserHangUp',peerUserId);
+    }
     alert('Cuộc gọi đã kết thúc');
     window.location.reload();
-  }
+};
+
 socket.on('handUp', () => {
   alert('Cuộc gọi đã kết thúc');
 
   window.location.reload();
 });
+
 socket.on('getPeerIdSuccess', (peerId) => {
   callUser(peerId);
 });
+
 socket.on('getPeerIdFail',()=> {
   alert('Người dùng không online');
   window.location.reload();
 });
+
 async function callUser(socketId) {
   const offer = await peerConnection.createOffer();
   await peerConnection.setLocalDescription(new RTCSessionDescription(offer));
@@ -62,6 +77,7 @@ async function callUser(socketId) {
     to: socketId
   });
 }
+
 socket.on("call-made", async data => {
   if (getCalled) {
     const confirmed = confirm(
@@ -91,8 +107,11 @@ socket.on("call-made", async data => {
     answer,
     to: data.socket
   });
+  peerUserId = data.socket;
+  console.log(peerUserId);
   getCalled = true;
 });
+
 socket.on("answer-made", async data => {
   await peerConnection.setRemoteDescription(
     new RTCSessionDescription(data.answer)
@@ -105,6 +124,7 @@ socket.on("answer-made", async data => {
 
 socket.on("call-rejected", data => {
   alert(`User: "${data.user}" rejected your call.`);
+  window.location.reload();
 });
 
 peerConnection.ontrack = function({ streams: [stream] }) {

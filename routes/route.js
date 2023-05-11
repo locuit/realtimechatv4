@@ -112,41 +112,24 @@ router.get('/register', (req, res) => {
     res.render('videocall.ejs');
   });
   
-  router.get('/chat', ensureAuthenticated, (req, res) => {
+  router.get('/chat', ensureAuthenticated, async (req, res) => {
     try {
       const userId = req.session.passport.user;
-      User.find({})
-        .then(usersNotMe => {
-          const filteredUsers = usersNotMe.filter(user => user._id != userId);
-          filteredUsers.forEach(user => {
-            client.hget('user_status', user._id.toString(), (err, status) => {
-              if (err) throw err;
-              user.status = status;
-            });
-          });
-          User.findById(userId)
-            .then(userIsMe => {
-              const savedRooms = userIsMe.rooms;
-              Room.find({ _id: { $in: savedRooms } })
-                .then(rooms => {
-                  res.render('chat.ejs', { users: filteredUsers, user: userIsMe, rooms: rooms });
-                })
-                .catch(err => {
-                  console.log(err);
-                })
-            })
-            .catch(err => {
-              console.log(err);
-            })
-        })
-        .catch(err => {
-          console.log(err);
-        });
+      const usersNotMe = await User.find({});
+      const filteredUsers = usersNotMe.filter(user => user._id != userId);
+      for (const user of filteredUsers) {
+        const status = await client.hget('user_status', user._id.toString());
+        user.status = status;
+      }
+      const userIsMe = await User.findById(userId);
+      const savedRooms = userIsMe.rooms;
+      const rooms = await Room.find({ _id: { $in: savedRooms } });
+      res.render('chat.ejs', { users: filteredUsers, user: userIsMe, rooms: rooms });
     } catch (err) {
       console.error('Lỗi khi xử lý session không tồn tại:', err);
       res.redirect('/login');
-    }  
-  });  
+    }
+  });
   
   router.get('/me', (req, res) => {
     const userId = req.session.passport.user;
