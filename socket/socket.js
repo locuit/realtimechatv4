@@ -10,6 +10,7 @@ const fs = require('fs');
 const PrivateRoom = require('../models/privateroom'); 
 const User = require('../models/user');
 const Message = require('../models/message'); 
+const Room = require('../models/room');
 const formatMessage = require('../utils/messages');
 const moment = require('moment');
     const { userJoin, getCurrentUser,userLeave,getRoomUsers, getAnotherUser, addRoomUser} = require('../utils/users');
