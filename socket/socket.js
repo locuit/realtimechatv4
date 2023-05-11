@@ -276,8 +276,9 @@ const moment = require('moment');
       const user = getAnotherUser(myPeerUserId);
       if(user)
       {
+        const userIsMe = getCurrentUser(socket.id);
         callStatus.splice(callStatus.findIndex(x => x.id === user.userId),1);
-        callStatus.splice(callStatus.findIndex(x => x.id === myPeerUserId),1);
+        callStatus.splice(callStatus.findIndex(x => x.id === userIsMe.userId),1);
         io.to(user.id).emit('handUp');
       }
       else{
