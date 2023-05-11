@@ -7,7 +7,7 @@ const peerConnection = new RTCPeerConnection();
 const videoContainer = document.querySelector('.video-container');
 const endCallBtn = document.getElementById('end-call-btn');
 const muteBtn = document.getElementById('mute-btn');
-
+let peerUserId;
 document.getElementById("end-call-btn").addEventListener("click", hangUp);
 
 muteBtn.addEventListener('click', () => {
@@ -36,13 +36,20 @@ function hangUp() {
     const localVideo = document.getElementById("local-video");
     localVideo.srcObject.getTracks().forEach(track => track.stop());
     localVideo.srcObject = null;
-
+    const urlParams = new URLSearchParams(window.location.search);
+    const myPeerUserId = urlParams.get('user1');
     const remoteVideo = document.getElementById("remote-video");
     remoteVideo.srcObject.getTracks().forEach(track => track.stop());
     remoteVideo.srcObject = null;
 
     videoContainer.classList.add('hidden');
-    socket.emit('getUserHangUp',myPeerUserId);
+    if(myPeerUserId){
+      socket.emit('getUserHangUp',myPeerUserId);
+    }
+    else {
+
+      socket.emit('getUserHangUp',peerUserId);
+    }
     alert('Cuộc gọi đã kết thúc');
     window.location.reload();
 };
@@ -100,6 +107,8 @@ socket.on("call-made", async data => {
     answer,
     to: data.socket
   });
+  peerUserId = data.socket;
+  console.log(peerUserId);
   getCalled = true;
 });
 
@@ -115,6 +124,7 @@ socket.on("answer-made", async data => {
 
 socket.on("call-rejected", data => {
   alert(`User: "${data.user}" rejected your call.`);
+  window.location.reload();
 });
 
 peerConnection.ontrack = function({ streams: [stream] }) {

@@ -264,6 +264,9 @@ const moment = require('moment');
     
     socket.on("reject-call", data => {
       const user = getCurrentUser(socket.id);
+      const peerUser = getCurrentUser(data.from);
+      callStatus.splice(callStatus.findIndex(x => x.id === user.userId),1);
+      callStatus.splice(callStatus.findIndex(x => x.id === peerUser.userId),1);
       socket.to(data.from).emit("call-rejected", {
         socket: socket.id,
         user: user.username
@@ -275,7 +278,14 @@ const moment = require('moment');
       {
         callStatus.splice(callStatus.findIndex(x => x.id === user.userId),1);
         callStatus.splice(callStatus.findIndex(x => x.id === myPeerUserId),1);
-        io.to(user.id).emit('userHangUp');
+        io.to(user.id).emit('handUp');
+      }
+      else{
+        const user = getCurrentUser(socket.id);
+        callStatus.splice(callStatus.findIndex(x => x.id === user.userId),1);
+        const peerUser = getCurrentUser(myPeerUserId);
+        callStatus.splice(callStatus.findIndex(x => x.id === peerUser.userId),1);
+        io.to(peerUser.id).emit('handUp');
       }
     })  
     // End Handle Video Call
