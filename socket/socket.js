@@ -220,20 +220,21 @@ const moment = require('moment');
       //Handle Video Call
       socket.on('getPeerId', (myPeerUserId) => {
         const user = getAnotherUser(myPeerUserId);
-        if(user)
-        {
-          //kiem tra neu da ton tai trong callStatus thi thong bao da co nguoi goi
-          if(callStatus.findIndex(x => x.id === user.userId) !== -1)
-          {
+      
+        if (user) {
+          // Kiểm tra nếu đã tồn tại trong callStatus thì thông báo đã có người gọi
+          const existingCall = callStatus.find(x => x.idCaller === user.userId || x.idReceiver === user.userId);
+          if (existingCall) {
             io.to(socket.id).emit('getPeerIdFail');
             return;
           }
+      
           io.to(socket.id).emit('getPeerIdSuccess', user.id);
-        }
-        else{
+        } else {
           io.to(socket.id).emit('getPeerIdFail');
         }
-      });  
+      });
+      
       socket.on("call-user", (data) => {
         const user = getCurrentUser(socket.id);
         socket.to(data.to).emit("call-made", {
@@ -245,15 +246,13 @@ const moment = require('moment');
     socket.on("make-answer", data => {
       const user = getCurrentUser(socket.id);
       const peerUser = getCurrentUser(data.to);
-      if(callStatus.findIndex(x => x.id === user.userId) === -1)
+      if(callStatus.findIndex(x => x.idCaller === user.userId) === -1)
       {
         callStatus.push({
-          id: user.userId
-        });
-        callStatus.push({
-          id: peerUser.userId
-        });
-  
+          idCaller: user.userId,
+          idReceiver: peerUser.userId,
+      });
+      console.log(callStatus);
       }
       socket.to(data.to).emit("answer-made", {
         socket: socket.id,
@@ -265,30 +264,37 @@ const moment = require('moment');
     socket.on("reject-call", data => {
       const user = getCurrentUser(socket.id);
       const peerUser = getCurrentUser(data.from);
-      callStatus.splice(callStatus.findIndex(x => x.id === user.userId),1);
-      callStatus.splice(callStatus.findIndex(x => x.id === peerUser.userId),1);
+      
+      const userIndex = callStatus.findIndex(x => x.idCaller === user.userId && x.idReceiver === peerUser.userId);
+      if (userIndex !== -1) {
+        callStatus.splice(userIndex, 1);
+      }
+
+      const peerUserIndex = callStatus.findIndex(x => x.idCaller === peerUser.userId && x.idReceiver === user.userId);
+      if (peerUserIndex !== -1) {
+        callStatus.splice(peerUserIndex, 1);
+      }
+      console.log(callStatus);
       socket.to(data.from).emit("call-rejected", {
         socket: socket.id,
         user: user.username
       });  
     });  
-    socket.on('getUserHangUp',(myPeerUserId) => {
-      const user = getAnotherUser(myPeerUserId);
-      if(user)
-      {
-        const userIsMe = getCurrentUser(socket.id);
-        callStatus.splice(callStatus.findIndex(x => x.id === user.userId),1);
-        callStatus.splice(callStatus.findIndex(x => x.id === userIsMe.userId),1);
-        io.to(user.id).emit('handUp');
+    socket.on('getUserHangUp', (myCallVideoId) => {
+      const user = getAnotherUser(myCallVideoId);
+      let myId, myPeerId;
+      if (user) {
+        const userIndex = callStatus.findIndex(x => x.idCaller === user.userId || x.idReceiver === user.userId);
+        if (userIndex !== -1) {
+          myId = getAnotherUser(callStatus[userIndex].idCaller);
+          myPeerId = getAnotherUser(callStatus[userIndex].idReceiver);
+          io.to(myId.id).emit('handUp');
+          io.to(myPeerId.id).emit('handUp');
+          callStatus.splice(userIndex, 1);
+        }
       }
-      else{
-        const user = getCurrentUser(socket.id);
-        callStatus.splice(callStatus.findIndex(x => x.id === user.userId),1);
-        const peerUser = getCurrentUser(myPeerUserId);
-        callStatus.splice(callStatus.findIndex(x => x.id === peerUser.userId),1);
-        io.to(peerUser.id).emit('handUp');
-      }
-    })  
+    });
+    
     // End Handle Video Call
   
     //Handle Disconnect
