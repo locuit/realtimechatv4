@@ -2,8 +2,9 @@ let isAlreadyCalling = false;
 let getCalled = false;
 let isMicMuted = false;
 
+const configuration = {'iceServers': [{'urls': 'stun:stun.l.google.com:19302'}]}
 const { RTCPeerConnection, RTCSessionDescription } = window;
-const peerConnection = new RTCPeerConnection();
+const peerConnection = new RTCPeerConnection(configuration);
 const videoContainer = document.querySelector('.video-container');
 const endCallBtn = document.getElementById('end-call-btn');
 const muteBtn = document.getElementById('mute-btn');
