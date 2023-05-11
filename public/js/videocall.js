@@ -137,7 +137,8 @@ peerConnection.onicecandidate = function(event) {
   };
   socket.on("iceCandidate", async data => {
     try {
-    await peerConnection.addIceCandidate(data.candidate);
+    await peerConnection.addIceCandidate( new RTCIceCandidate(data.candidate));
+    console.log('addIceCandidate success');
     } catch (error) {
     console.error("Error adding ice candidate:", error);
     }
