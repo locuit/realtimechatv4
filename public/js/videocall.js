@@ -2,21 +2,39 @@ let isAlreadyCalling = false;
 let getCalled = false;
 let isMicMuted = false;
 
-const configuration = {'iceServers': [
-  {'urls': 'stun:stun.l.google.com:19302'},
-{
-  "urls": [
-  "turn:13.250.13.83:3478?transport=udp"
-  ],
-  "username": "YzYNCouZM1mhqhmseWk6",
-  "credential": "YzYNCouZM1mhqhmseWk6"
-  }]}
+
 const { RTCPeerConnection, RTCSessionDescription } = window;
-const peerConnection = new RTCPeerConnection(configuration);
+// const peerConnection = new RTCPeerConnection(peerConfiguration);
 const videoContainer = document.querySelector('.video-container');
 const endCallBtn = document.getElementById('end-call-btn');
 const muteBtn = document.getElementById('mute-btn');
-
+const peerConnection = new RTCPeerConnection({
+  iceServers: [
+      {
+        urls: "stun:a.relay.metered.ca:80",
+      },
+      {
+        urls: "turn:a.relay.metered.ca:80",
+        username: "7c294c2f9e9125844880e59f",
+        credential: "SWZQqsQ49t2GwE7A",
+      },
+      {
+        urls: "turn:a.relay.metered.ca:80?transport=tcp",
+        username: "7c294c2f9e9125844880e59f",
+        credential: "SWZQqsQ49t2GwE7A",
+      },
+      {
+        urls: "turn:a.relay.metered.ca:443",
+        username: "7c294c2f9e9125844880e59f",
+        credential: "SWZQqsQ49t2GwE7A",
+      },
+      {
+        urls: "turn:a.relay.metered.ca:443?transport=tcp",
+        username: "7c294c2f9e9125844880e59f",
+        credential: "SWZQqsQ49t2GwE7A",
+      },
+  ],
+});
 document.getElementById("end-call-btn").addEventListener("click", hangUp);
 
 muteBtn.addEventListener('click', () => {
