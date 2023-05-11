@@ -57,10 +57,8 @@ socket.on('createRoomSuccess',({roomName, roomId})=>{
   window.location.reload();
 })
 
-function login(userId)
-{
-  socket.emit('login', userId);
-  
+async function login(userId) {
+  await socket.emit('login', userId);
 }
 
 socket.on('privateRoom',({username,room})=>{
@@ -72,23 +70,21 @@ socket.on('roomUsers', ({ room, users}) => {
   outputUsers(users);
 });
 
-function createRoom(roomName, selectedUsers){
-  socket.emit('createRoom', {roomName, selectedUsers});
+async function createRoom(roomName, selectedUsers) {
+  await socket.emit('createRoom', { roomName, selectedUsers });
 }
 let imageSelected = false; 
 
-document.getElementById('imageInput').addEventListener('change', (event) => {
+document.getElementById('imageInput').addEventListener('change', async (event) => {
   if (event.target.files.length > 0) {
     const imageFile = event.target.files[0];
     const reader = new FileReader();
     
     reader.onload = (e) => {
       const image = new Image();
-      image.onload = () => {
+      image.onload = async () => {
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
-        
-        // Tính toán kích thước mới cho ảnh
         const maxWidth = 1200;
         const maxHeight = 800;
         let width = image.width;
@@ -104,17 +100,13 @@ document.getElementById('imageInput').addEventListener('change', (event) => {
           height = maxHeight;
         }
         
-        // Đặt kích thước mới cho canvas
         canvas.width = width;
         canvas.height = height;
 
-        // Vẽ ảnh lên canvas với kích thước mới
         ctx.drawImage(image, 0, 0, width, height);
 
-        // Lấy dữ liệu hình ảnh từ canvas dưới dạng Base64
-        const compressedImageData = canvas.toDataURL('image/jpeg', 1); // Giảm chất lượng ảnh xuống 70%
+        const compressedImageData = canvas.toDataURL('image/jpeg', 1);
 
-        // Chuyển đổi dữ liệu Base64 thành ArrayBuffer
         const byteString = atob(compressedImageData.split(',')[1]);
         const buffer = new ArrayBuffer(byteString.length);
         const view = new Uint8Array(buffer);
@@ -123,7 +115,7 @@ document.getElementById('imageInput').addEventListener('change', (event) => {
           view[i] = byteString.charCodeAt(i);
         }
 
-        socket.emit('imageUpload', buffer);
+        await socket.emit('imageUpload', buffer);
       };
 
       image.src = e.target.result;
@@ -133,7 +125,7 @@ document.getElementById('imageInput').addEventListener('change', (event) => {
   }
 });
 
-chatForm.addEventListener('submit', (e) => {
+chatForm.addEventListener('submit', async (e) => {
   e.preventDefault();
 
   let msg = e.target.elements.msg.value;
@@ -144,7 +136,7 @@ chatForm.addEventListener('submit', (e) => {
     return false;
   }
 
-  socket.emit('chatMessage', msg);
+  await socket.emit('chatMessage', msg);
   
 
   e.target.elements.msg.value = '';
@@ -172,7 +164,7 @@ socket.on('uploadSuccess', (fileName) => {
   document.getElementById('messages').appendChild(li);
 });
 
-function outputMessage(message) {
+async function outputMessage(message) {
   const div = document.createElement('div');
   if(message.fileType){
       if (message.fileType==='webm') {
@@ -198,7 +190,7 @@ document.querySelector('.chat-messages').appendChild(div);
 } 
 
 
-function outputUsers(users) {
+async function outputUsers(users) {
 
   userList.innerHTML = '';
   userList.innerHTML = `
@@ -206,10 +198,10 @@ function outputUsers(users) {
   `;
 }
 
-socket.on('output-messages', (data) => {
+socket.on('output-messages', async (data) => {
   if (data.length) {
     data.forEach((message) => {
-      outputMessage(message);
+    outputMessage(message);
     });
   }
 });

@@ -1,12 +1,15 @@
 let isAlreadyCalling = false;
 let getCalled = false;
+let isMicMuted = false;
+
 const { RTCPeerConnection, RTCSessionDescription } = window;
 const peerConnection = new RTCPeerConnection();
 const videoContainer = document.querySelector('.video-container');
 const endCallBtn = document.getElementById('end-call-btn');
-document.getElementById("end-call-btn").addEventListener("click", hangUp);
 const muteBtn = document.getElementById('mute-btn');
-let isMicMuted = false;
+
+document.getElementById("end-call-btn").addEventListener("click", hangUp);
+
 muteBtn.addEventListener('click', () => {
   const localStream = document.getElementById("local-video").srcObject;
   const audioTrack = localStream.getAudioTracks()[0];
@@ -14,8 +17,9 @@ muteBtn.addEventListener('click', () => {
   audioTrack.enabled = !isMicMuted;
   muteBtn.textContent = isMicMuted ? "Unmute" : "Mute";
 });
+
 document.getElementById('video-call-btn').addEventListener('click', async ()  => {
-     videoContainer.classList.remove('hidden');
+  videoContainer.classList.remove('hidden');
   const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
   if (stream) {
     const localVideo = document.getElementById("local-video");
@@ -24,7 +28,7 @@ document.getElementById('video-call-btn').addEventListener('click', async ()  =>
   }
   socket.emit('getPeerId',myPeerUserId);
 });
-  function hangUp() {
+function hangUp() {
     peerConnection.close();
     peerConnection.onicecandidate = null;
     peerConnection.onaddstream = null;
@@ -41,19 +45,23 @@ document.getElementById('video-call-btn').addEventListener('click', async ()  =>
     socket.emit('getUserHangUp',myPeerUserId);
     alert('Cuộc gọi đã kết thúc');
     window.location.reload();
-  }
+};
+
 socket.on('handUp', () => {
   alert('Cuộc gọi đã kết thúc');
 
   window.location.reload();
 });
+
 socket.on('getPeerIdSuccess', (peerId) => {
   callUser(peerId);
 });
+
 socket.on('getPeerIdFail',()=> {
   alert('Người dùng không online');
   window.location.reload();
 });
+
 async function callUser(socketId) {
   const offer = await peerConnection.createOffer();
   await peerConnection.setLocalDescription(new RTCSessionDescription(offer));
@@ -62,6 +70,7 @@ async function callUser(socketId) {
     to: socketId
   });
 }
+
 socket.on("call-made", async data => {
   if (getCalled) {
     const confirmed = confirm(
@@ -93,6 +102,7 @@ socket.on("call-made", async data => {
   });
   getCalled = true;
 });
+
 socket.on("answer-made", async data => {
   await peerConnection.setRemoteDescription(
     new RTCSessionDescription(data.answer)
