@@ -5,13 +5,13 @@ const chatForm = document.getElementById('chat-form');
 const chatMessages = document.querySelector('.chat-messages');
 const userList = document.getElementById('user-InRoom');
 const userListAll = document.getElementById('users');
-const socket = io();
 const urlParams = new URLSearchParams(window.location.search);
 const username = urlParams.get('user');
 const room = urlParams.get('room');
 const myPeerUserId = urlParams.get('user1');
 const myUserId = urlParams.get('user2');
 var btnCall = document.getElementById('video-call-btn');
+const socket = io();
 
 
 if(urlParams.get('user1') == null && urlParams.get('user2') == null && urlParams.get('user') == null && urlParams.get('room') == null){

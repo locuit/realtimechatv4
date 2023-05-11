@@ -18,7 +18,6 @@ document.getElementById('video-call-btn').addEventListener('click', async ()  =>
      videoContainer.classList.remove('hidden');
   const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
   if (stream) {
-    console.log('stream')
     const localVideo = document.getElementById("local-video");
     localVideo.srcObject = stream;
     stream.getTracks().forEach(track => peerConnection.addTrack(track, stream));
@@ -49,7 +48,6 @@ socket.on('handUp', () => {
   window.location.reload();
 });
 socket.on('getPeerIdSuccess', (peerId) => {
-  console.log('peerId', peerId);
   callUser(peerId);
 });
 socket.on('getPeerIdFail',()=> {
@@ -89,7 +87,6 @@ socket.on("call-made", async data => {
     );
     const answer = await peerConnection.createAnswer();
     await peerConnection.setLocalDescription(new RTCSessionDescription(answer));
-    console.log(isAlreadyCalling)
   socket.emit("make-answer", {
     answer,
     to: data.socket
