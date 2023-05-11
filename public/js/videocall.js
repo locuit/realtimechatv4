@@ -55,6 +55,7 @@ socket.on('handUp', () => {
 });
 
 socket.on('getPeerIdSuccess', (peerId) => {
+  peerUserId = peerId;
   callUser(peerId);
 });
 
@@ -102,7 +103,6 @@ socket.on("call-made", async data => {
     to: data.socket
   });
   peerUserId = data.socket;
-  console.log(peerUserId);
   getCalled = true;
 });
 
@@ -127,3 +127,18 @@ peerConnection.ontrack = function({ streams: [stream] }) {
     remoteVideo.srcObject = stream;
   }
 };
+peerConnection.onicecandidate = function(event) {
+  if (event.candidate) {
+  socket.emit("addIceCandidate", {
+  candidate: event.candidate,
+  to: peerUserId
+  });
+  }
+  };
+  socket.on("iceCandidate", async data => {
+    try {
+    await peerConnection.addIceCandidate(data.candidate);
+    } catch (error) {
+    console.error("Error adding ice candidate:", error);
+    }
+    });

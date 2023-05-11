@@ -294,7 +294,12 @@ const moment = require('moment');
     });
     
     // End Handle Video Call
-  
+    socket.on('addIceCandidate', data => {
+      // Truyền ICE candidate từ người gọi tới người được gọi
+      io.to(data.to).emit('iceCandidate', {
+        candidate: data.candidate
+      });
+    });
     //Handle Disconnect
     socket.on('logout',(userId) =>{
       io.emit('offlineUser',userId);
