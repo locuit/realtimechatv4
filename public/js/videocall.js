@@ -7,7 +7,7 @@ const peerConnection = new RTCPeerConnection();
 const videoContainer = document.querySelector('.video-container');
 const endCallBtn = document.getElementById('end-call-btn');
 const muteBtn = document.getElementById('mute-btn');
-let peerUserId;
+
 document.getElementById("end-call-btn").addEventListener("click", hangUp);
 
 muteBtn.addEventListener('click', () => {
@@ -36,20 +36,13 @@ function hangUp() {
     const localVideo = document.getElementById("local-video");
     localVideo.srcObject.getTracks().forEach(track => track.stop());
     localVideo.srcObject = null;
-    const urlParams = new URLSearchParams(window.location.search);
-    const myPeerUserId = urlParams.get('user1');
+    const myCallVideoId = document.getElementById('userId').getAttribute('data-myUserId');
     const remoteVideo = document.getElementById("remote-video");
     remoteVideo.srcObject.getTracks().forEach(track => track.stop());
     remoteVideo.srcObject = null;
 
     videoContainer.classList.add('hidden');
-    if(myPeerUserId){
-      socket.emit('getUserHangUp',myPeerUserId);
-    }
-    else {
-
-      socket.emit('getUserHangUp',peerUserId);
-    }
+    socket.emit('getUserHangUp',myCallVideoId);
     alert('Cuộc gọi đã kết thúc');
     window.location.reload();
 };
