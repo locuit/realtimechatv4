@@ -1,10 +1,7 @@
 module.exports = function(server)
 {   const Redis = require('ioredis');
 const client = new Redis({
-    host: 'redis-11490.c295.ap-southeast-1-1.ec2.cloud.redislabs.com',
-    port: 11490,
-    username: 'default',
-    password: 'ZzbFUmwQEXe6rQIbxZoempgvTqOrUjm9',
+
 });
 const fs = require('fs');
 const PrivateRoom = require('../models/privateroom'); 
@@ -52,9 +49,10 @@ const moment = require('moment');
           return 'unknown';
         }  
       }  
-    io.on("connection", (socket) => {
-    socket.on('login', ( userId ) => {
+  io.on("connection", (socket) => {
+    socket.on('login', ( userId ) => {8
       client.hset('user_status', userId, 'online');
+
       const user = userJoin(socket.id, '', '', userId);
       client.hgetall('user_status', (err, result) => {
         if (err) throw err;
@@ -99,7 +97,9 @@ const moment = require('moment');
       try {
         const userFullName = await User.findById(username);
         const user = userJoin(socket.id, userFullName.fullName, room, username);
+
         socket.join(user.room);
+
         User.find({rooms : user.room}).then(userInRoom => {
           io.to(socket.id).emit('roomUsers', {
             room: user.room,
@@ -294,13 +294,13 @@ const moment = require('moment');
       }
     });
     
-    // End Handle Video Call
     socket.on('addIceCandidate', data => {
       // Truyền ICE candidate từ người gọi tới người được gọi
       io.to(data.to).emit('iceCandidate', {
         candidate: data.candidate
       });
     });
+    // End Handle Video Call
     //Handle Disconnect
     socket.on('logout',(userId) =>{
       io.emit('offlineUser',userId);
@@ -313,12 +313,6 @@ const moment = require('moment');
         io.emit('offlineUser',getuser.userId);
         client.hdel('user_status', getuser.userId);
       }  
-      client.hgetall('user_status', (err, result) => {
-        if (err) throw err;
-      
-        const onlineUsers = Object.keys(result).filter((userId) => result[userId] === 'online');
-        
-      });  
         const user = userLeave(socket.id);
         if(user && user.room)
         {
