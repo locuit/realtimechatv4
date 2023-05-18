@@ -133,6 +133,8 @@ socket.on("call-made", async data => {
       }
     } catch (error) {
       // Xử lý lỗi không lấy được camera
+      const myCallVideoId = document.getElementById('userId').getAttribute('data-myUserId');
+      socket.emit('getUserHangUp',myCallVideoId);
       alert("Could not access camera. Please make sure it is not being used by another application.");
       return;
     }
@@ -191,27 +193,21 @@ peerConnection.onicecandidate = function(event) {
     }
     });
 
-    // Thêm sự kiện cho nút chuyển đổi camera
 document.getElementById('camera-select').addEventListener('change', switchCamera);
 
-// Hàm xử lý sự kiện chuyển đổi camera
 async function switchCamera() {
   const selectedDeviceId = this.value;
   console.log('selectedDeviceId', selectedDeviceId, 'localStream', localStream);
   if (localStream && selectedDeviceId) {
     const videoTracks = localStream.getVideoTracks();
     if (videoTracks.length > 0) {
-      // Tắt luồng video hiện tại
       videoTracks[0].stop();
 
-      // Lấy luồng mới từ camera đã chọn
       localStream = await navigator.mediaDevices.getUserMedia({ video: { deviceId: selectedDeviceId }, audio: true });
       console.log('localStream', localStream);
-      // Cập nhật luồng mới cho video hiện tại
       const localVideo = document.getElementById("local-video");
       localVideo.srcObject = localStream;
 
-      // Thêm các luồng mới vào kết nối peer
       localStream.getTracks().forEach(track => {
         const sender = peerConnection.getSenders().find(s => s.track.kind === track.kind);
         if (sender) {
@@ -225,7 +221,7 @@ async function switchCamera() {
   }
 }
 
-// Hàm để lấy danh sách các camera và hiển thị trong dropdown select
+
 async function populateCameraList() {
   const devices = await navigator.mediaDevices.enumerateDevices();
   const videoDevices = devices.filter(device => device.kind === 'videoinput');
@@ -241,5 +237,4 @@ async function populateCameraList() {
   });
 }
 
-// Gọi hàm để lấy danh sách camera khi trang web được tải
 populateCameraList();
