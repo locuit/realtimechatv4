@@ -1,7 +1,10 @@
 module.exports = function(server)
 {   const Redis = require('ioredis');
 const client = new Redis({
-
+    host: 'redis-11490.c295.ap-southeast-1-1.ec2.cloud.redislabs.com',
+    port: 11490,
+    username: 'default',
+    password: 'ZzbFUmwQEXe6rQIbxZoempgvTqOrUjm9',
 });
 const fs = require('fs');
 const PrivateRoom = require('../models/privateroom'); 
