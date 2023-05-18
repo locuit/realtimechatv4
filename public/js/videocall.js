@@ -35,15 +35,14 @@ const peerConnection = new RTCPeerConnection({
   ],
 });
 document.getElementById("end-call-btn").addEventListener("click", hangUp);
-
+let localStream = null;
 muteBtn.addEventListener('click', () => {
-  const localStream = document.getElementById("local-video").srcObject;
+  localStream = document.getElementById("local-video").srcObject;
   const audioTrack = localStream.getAudioTracks()[0];
   isMicMuted = !isMicMuted;
   audioTrack.enabled = !isMicMuted;
   muteBtn.textContent = isMicMuted ? "Unmute" : "Mute";
 });
-
 document.getElementById('video-call-btn').addEventListener('click', async ()  => {
   videoContainer.classList.remove('hidden');
   await setupLocalCamera();
@@ -106,7 +105,7 @@ async function callUser(socketId) {
 socket.on("call-made", async data => {
   if (getCalled) {
     const confirmed = confirm(
-      `User "${data.user}" wants to call you. Do accept this call?`
+      `User "${data.user}" wants to call you. Do you accept this call?`
     );
 
     if (!confirmed) {
@@ -118,11 +117,19 @@ socket.on("call-made", async data => {
 
     videoContainer.classList.remove('hidden');
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-      if (stream) {
+      const newStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      localStream = newStream;
+      if (newStream) {
         const localVideo = document.getElementById("local-video");
-        localVideo.srcObject = stream;
-        stream.getTracks().forEach(track => peerConnection.addTrack(track, stream));
+        localVideo.srcObject = newStream;
+        newStream.getTracks().forEach(track => {
+          const sender = peerConnection.getSenders().find(s => s.track && s.track.kind === track.kind);
+          if (sender) {
+            sender.replaceTrack(track);
+          } else {
+            peerConnection.addTrack(track, newStream);
+          }
+        });
       }
     } catch (error) {
       // Xử lý lỗi không lấy được camera
@@ -143,6 +150,7 @@ socket.on("call-made", async data => {
   peerUserId = data.socket;
   getCalled = true;
 });
+
 
 
 socket.on("answer-made", async data => {
@@ -182,3 +190,56 @@ peerConnection.onicecandidate = function(event) {
     console.error("Error adding ice candidate:", error);
     }
     });
+
+    // Thêm sự kiện cho nút chuyển đổi camera
+document.getElementById('camera-select').addEventListener('change', switchCamera);
+
+// Hàm xử lý sự kiện chuyển đổi camera
+async function switchCamera() {
+  const selectedDeviceId = this.value;
+  console.log('selectedDeviceId', selectedDeviceId, 'localStream', localStream);
+  if (localStream && selectedDeviceId) {
+    const videoTracks = localStream.getVideoTracks();
+    if (videoTracks.length > 0) {
+      // Tắt luồng video hiện tại
+      videoTracks[0].stop();
+
+      // Lấy luồng mới từ camera đã chọn
+      localStream = await navigator.mediaDevices.getUserMedia({ video: { deviceId: selectedDeviceId }, audio: true });
+      console.log('localStream', localStream);
+      // Cập nhật luồng mới cho video hiện tại
+      const localVideo = document.getElementById("local-video");
+      localVideo.srcObject = localStream;
+
+      // Thêm các luồng mới vào kết nối peer
+      localStream.getTracks().forEach(track => {
+        const sender = peerConnection.getSenders().find(s => s.track.kind === track.kind);
+        if (sender) {
+          sender.replaceTrack(track);
+        } else {
+          peerConnection.addTrack(track, localStream);
+        }
+      });
+
+    }
+  }
+}
+
+// Hàm để lấy danh sách các camera và hiển thị trong dropdown select
+async function populateCameraList() {
+  const devices = await navigator.mediaDevices.enumerateDevices();
+  const videoDevices = devices.filter(device => device.kind === 'videoinput');
+
+  const selectElement = document.getElementById('camera-select');
+  selectElement.innerHTML = '';
+
+  videoDevices.forEach(device => {
+    const option = document.createElement('option');
+    option.value = device.deviceId;
+    option.text = device.label || `Camera ${selectElement.length + 1}`;
+    selectElement.appendChild(option);
+  });
+}
+
+// Gọi hàm để lấy danh sách camera khi trang web được tải
+populateCameraList();

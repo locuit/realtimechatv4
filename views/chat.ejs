@@ -146,8 +146,13 @@ button[type="button"]:hover {
           <div class="video-container hidden" style="position: absolute;">
             <video autoplay class="remote-video" id="remote-video"></video>
             <video autoplay muted class="local-video" id="local-video"></video>
+
             <button id="mute-btn">Mute/Unmute</button>
             <button id="end-call-btn" class="btn">End Call</button>
+            <div>
+              <label for="camera-select">Switch Camera:</label>
+              <select id="camera-select"></select>
+            </div>
           </div>
         </div>
         <div class="chat-usersOnline">
