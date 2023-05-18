@@ -297,12 +297,12 @@ const moment = require('moment');
       }
     });
     
-    socket.on('addIceCandidate', data => {
-      // Truyền ICE candidate từ người gọi tới người được gọi
-      io.to(data.to).emit('iceCandidate', {
-        candidate: data.candidate
-      });
-    });
+    // socket.on('addIceCandidate', data => {
+    //   // Truyền ICE candidate từ người gọi tới người được gọi
+    //   io.to(data.to).emit('iceCandidate', {
+    //     candidate: data.candidate
+    //   });
+    // });
     // End Handle Video Call
     //Handle Disconnect
     socket.on('logout',(userId) =>{

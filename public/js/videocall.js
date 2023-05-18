@@ -4,7 +4,6 @@ let isMicMuted = false;
 
 
 const { RTCPeerConnection, RTCSessionDescription } = window;
-// const peerConnection = new RTCPeerConnection(peerConfiguration);
 const videoContainer = document.querySelector('.video-container');
 const endCallBtn = document.getElementById('end-call-btn');
 const muteBtn = document.getElementById('mute-btn');
@@ -153,19 +152,19 @@ peerConnection.ontrack = function({ streams: [stream] }) {
     remoteVideo.srcObject = stream;
   }
 };
-peerConnection.onicecandidate = function(event) {
-  if (event.candidate) {
-  socket.emit("addIceCandidate", {
-  candidate: event.candidate,
-  to: peerUserId
-  });
-  }
-  };
-  socket.on("iceCandidate", async data => {
-    try {
-    await peerConnection.addIceCandidate( new RTCIceCandidate(data.candidate));
-    console.log('addIceCandidate success');
-    } catch (error) {
-    console.error("Error adding ice candidate:", error);
-    }
-    });
+// peerConnection.onicecandidate = function(event) {
+//   if (event.candidate) {
+//   socket.emit("addIceCandidate", {
+//   candidate: event.candidate,
+//   to: peerUserId
+//   });
+//   }
+//   };
+  // socket.on("iceCandidate", async data => {
+  //   try {
+  //   await peerConnection.addIceCandidate( new RTCIceCandidate(data.candidate));
+  //   console.log('addIceCandidate success');
+  //   } catch (error) {
+  //   console.error("Error adding ice candidate:", error);
+  //   }
+  //   });
