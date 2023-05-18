@@ -3,7 +3,7 @@ let getCalled = false;
 let isMicMuted = false;
 
 
-const { RTCPeerConnection, RTCSessionDescription } = window;
+const { RTCPeerConnection, RTCSessionDescription, RTCIceCandidate } = window;
 const videoContainer = document.querySelector('.video-container');
 const endCallBtn = document.getElementById('end-call-btn');
 const muteBtn = document.getElementById('mute-btn');
@@ -46,14 +46,18 @@ muteBtn.addEventListener('click', () => {
 
 document.getElementById('video-call-btn').addEventListener('click', async ()  => {
   videoContainer.classList.remove('hidden');
-  const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-  if (stream) {
-    const localVideo = document.getElementById("local-video");
-    localVideo.srcObject = stream;
-    stream.getTracks().forEach(track => peerConnection.addTrack(track, stream));
-  }
+  await setupLocalCamera();
   socket.emit('getPeerId',myPeerUserId);
 });
+
+async function setupLocalCamera() {
+  localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+  if (localStream) {
+    const localVideo = document.getElementById("local-video");
+    localVideo.srcObject = localStream;
+    localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+  }
+}
 function hangUp() {
     peerConnection.close();
     peerConnection.onicecandidate = null;
@@ -112,15 +116,14 @@ socket.on("call-made", async data => {
     }
     videoContainer.classList.remove('hidden');
     const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+    console.log('hi',stream);
     if (stream) {
       const localVideo = document.getElementById("local-video");
       localVideo.srcObject = stream;
       stream.getTracks().forEach(track => peerConnection.addTrack(track, stream));
     }
   }
-  await peerConnection.setRemoteDescription(
-    new RTCSessionDescription(data.offer)
-    );
+  await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
     const answer = await peerConnection.createAnswer();
     await peerConnection.setLocalDescription(new RTCSessionDescription(answer));
   socket.emit("make-answer", {
@@ -152,19 +155,19 @@ peerConnection.ontrack = function({ streams: [stream] }) {
     remoteVideo.srcObject = stream;
   }
 };
-// peerConnection.onicecandidate = function(event) {
-//   if (event.candidate) {
-//   socket.emit("addIceCandidate", {
-//   candidate: event.candidate,
-//   to: peerUserId
-//   });
-//   }
-//   };
-  // socket.on("iceCandidate", async data => {
-  //   try {
-  //   await peerConnection.addIceCandidate( new RTCIceCandidate(data.candidate));
-  //   console.log('addIceCandidate success');
-  //   } catch (error) {
-  //   console.error("Error adding ice candidate:", error);
-  //   }
-  //   });
+peerConnection.onicecandidate = function(event) {
+  if (event.candidate) {
+  socket.emit("addIceCandidate", {
+  candidate: event.candidate,
+  to: peerUserId
+  });
+  }
+  };
+  socket.on("iceCandidate", async data => {
+    try {
+    await peerConnection.addIceCandidate( new RTCIceCandidate(data.candidate));
+    console.log('addIceCandidate success');
+    } catch (error) {
+    console.error("Error adding ice candidate:", error);
+    }
+    });
