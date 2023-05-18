@@ -59,6 +59,7 @@ async function setupLocalCamera() {
   }
 }
 function hangUp() {
+  videoContainer.classList.add('hidden');
     peerConnection.close();
     peerConnection.onicecandidate = null;
     peerConnection.onaddstream = null;
@@ -114,25 +115,35 @@ socket.on("call-made", async data => {
       });
       return;
     }
+
     videoContainer.classList.remove('hidden');
-    const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-    console.log('hi',stream);
-    if (stream) {
-      const localVideo = document.getElementById("local-video");
-      localVideo.srcObject = stream;
-      stream.getTracks().forEach(track => peerConnection.addTrack(track, stream));
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      if (stream) {
+        const localVideo = document.getElementById("local-video");
+        localVideo.srcObject = stream;
+        stream.getTracks().forEach(track => peerConnection.addTrack(track, stream));
+      }
+    } catch (error) {
+      // Xử lý lỗi không lấy được camera
+      alert("Could not access camera. Please make sure it is not being used by another application.");
+      return;
     }
   }
+
   await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
-    const answer = await peerConnection.createAnswer();
-    await peerConnection.setLocalDescription(new RTCSessionDescription(answer));
+  const answer = await peerConnection.createAnswer();
+  await peerConnection.setLocalDescription(new RTCSessionDescription(answer));
+  
   socket.emit("make-answer", {
     answer,
     to: data.socket
   });
+  
   peerUserId = data.socket;
   getCalled = true;
 });
+
 
 socket.on("answer-made", async data => {
   await peerConnection.setRemoteDescription(
