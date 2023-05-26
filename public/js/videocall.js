@@ -197,14 +197,12 @@ document.getElementById('camera-select').addEventListener('change', switchCamera
 
 async function switchCamera() {
   const selectedDeviceId = this.value;
-  console.log('selectedDeviceId', selectedDeviceId, 'localStream', localStream);
   if (localStream && selectedDeviceId) {
     const videoTracks = localStream.getVideoTracks();
     if (videoTracks.length > 0) {
       videoTracks[0].stop();
 
       localStream = await navigator.mediaDevices.getUserMedia({ video: { deviceId: selectedDeviceId }, audio: true });
-      console.log('localStream', localStream);
       const localVideo = document.getElementById("local-video");
       localVideo.srcObject = localStream;
 

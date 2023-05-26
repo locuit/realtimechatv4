@@ -6,6 +6,7 @@ const client = new Redis({
     username: 'default',
     password: 'ZzbFUmwQEXe6rQIbxZoempgvTqOrUjm9',
 });
+
 const fs = require('fs');
 const PrivateRoom = require('../models/privateroom'); 
 const User = require('../models/user');
