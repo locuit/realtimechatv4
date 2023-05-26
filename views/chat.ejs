@@ -57,9 +57,7 @@ select {
   border-radius: 3px; /* Độ bo tròn của góc input và select */
 }
 
-select {
-  height: 100px; /* Độ cao của select */
-}
+
 
 button[type="submit"],
 button[type="button"] {
@@ -103,6 +101,7 @@ button[type="button"]:hover {
 .hidden {
   display: none;
 }
+
   </style>
 </head>
 <body>
@@ -169,6 +168,12 @@ button[type="button"]:hover {
             placeholder="Enter Message"
             autocomplete="off"
           />
+          <!-- Icon or trigger element -->
+          <button id="emoji-trigger">😀</button>
+
+          <!-- Emoji picker container -->
+          <emoji-picker id="emoji-picker" style="display: none;"></emoji-picker>
+
           <label for="imageInput" class="file-label">
             <span class="file-label-text">Choose Image</span>
           </label>
@@ -183,6 +188,8 @@ button[type="button"]:hover {
 <script src="./js/main.js"></script>
 <script src="./js/videocall.js"></script>
 <script src="./js/voicechat.js"></script>
+<script type="module" src="https://cdn.jsdelivr.net/npm/emoji-picker-element@^1/index.js"></script>
+
 <script>
   
     var btnRoom = document.getElementById('chatRooms');

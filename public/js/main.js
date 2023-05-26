@@ -1,5 +1,3 @@
-
-
 const leaveRoom = document.getElementById('leave-btn');
 const chatForm = document.getElementById('chat-form');
 const chatMessages = document.querySelector('.chat-messages');
@@ -12,6 +10,8 @@ const myPeerUserId = urlParams.get('user1');
 const myUserId = urlParams.get('user2');
 var btnCall = document.getElementById('video-call-btn');
 const socket = io();
+
+
 
 
 if(urlParams.get('user1') == null && urlParams.get('user2') == null && urlParams.get('user') == null && urlParams.get('room') == null){
@@ -205,3 +205,25 @@ socket.on('output-messages', async (data) => {
     });
   }
 });
+
+
+const emojiTrigger = document.getElementById('emoji-trigger');
+const emojiPicker = document.getElementById('emoji-picker');
+const msgInput = document.getElementById('msg');
+
+emojiTrigger.addEventListener('click', () => {
+  emojiPicker.style.display = emojiPicker.style.display === 'none' ? 'block' : 'none';
+});
+
+emojiPicker.addEventListener('emoji-click', (event) => {
+  const emoji = event.detail.emoji.unicode;
+  const startPos = msgInput.selectionStart;
+  const endPos = msgInput.selectionEnd;
+  const textBeforeCursor = msgInput.value.substring(0, startPos);
+  const textAfterCursor = msgInput.value.substring(endPos);
+  msgInput.value = textBeforeCursor + emoji + textAfterCursor;
+  const newCursorPos = startPos + emoji.length;
+  msgInput.setSelectionRange(newCursorPos, newCursorPos);
+});
+
+
