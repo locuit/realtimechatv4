@@ -50,7 +50,10 @@ document.getElementById('video-call-btn').addEventListener('click', async ()  =>
 });
 
 async function setupLocalCamera() {
-  localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+  localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: {
+    echoCancellation: true,
+    noiseSuppression: true,
+    }});
   if (localStream) {
     const localVideo = document.getElementById("local-video");
     localVideo.srcObject = localStream;
@@ -117,7 +120,10 @@ socket.on("call-made", async data => {
 
     videoContainer.classList.remove('hidden');
     try {
-      const newStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      const newStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+        } });
       localStream = newStream;
       if (newStream) {
         const localVideo = document.getElementById("local-video");
